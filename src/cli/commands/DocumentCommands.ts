@@ -18,7 +18,8 @@ export function registerDocumentCommands(commands: CommandMap): void {
       const height = args.length === 2 ? parseNumber(args[1], 'height') : 600;
       const document = new Document(width, height);
       session.document = document;
-      session.currentPath = null;
+      session.readPath = null;
+      session.lastPath = null;
       session.history.lock();
       return [`canvas ${formatNumber(width)}x${formatNumber(height)} created`];
     },
@@ -45,7 +46,8 @@ export function registerDocumentCommands(commands: CommandMap): void {
         throw error;
       }
       session.document = result.document;
-      session.currentPath = path;
+      session.readPath = path;
+      session.lastPath = path;
       session.history.lock();
       return [
         ...result.warnings.map((warning) => `warning: ${warning}`),
@@ -59,7 +61,7 @@ export function registerDocumentCommands(commands: CommandMap): void {
     run: async (session, args) => {
       requireArgumentCount(args, 0, 1, 'save [file.svg]');
       const document = requireDocument(session);
-      const path = args[0] ?? session.currentPath;
+      const path = args[0] ?? session.readPath ?? session.lastPath;
       if (path === null || path.length === 0) {
         throw new DomainError("no file path. use 'save <file.svg>'");
       }
@@ -69,7 +71,7 @@ export function registerDocumentCommands(commands: CommandMap): void {
       } catch {
         throw new DomainError(`cannot write file: ${path}`);
       }
-      session.currentPath = path;
+      session.lastPath = path;
       session.history.lock();
       return [`saved to ${path} (${document.elementCount} elements)`];
     },

@@ -186,3 +186,34 @@ describe('document edge cases', () => {
     }
   });
 });
+
+describe('save path rules', () => {
+  it('prefers the read path for a bare save', () => {
+    const run = runCli(
+      ['read other.svg', 'save copy.svg', 'save'].join('\n'),
+    );
+    try {
+      const saves = run.stdout
+        .split('\n')
+        .filter((line) => line.startsWith('saved to '));
+      expect(saves).toEqual([
+        'saved to copy.svg (7 elements)',
+        'saved to other.svg (7 elements)',
+      ]);
+    } finally {
+      run.cleanup();
+    }
+  });
+
+  it('falls back to the last save path when the document came from init', () => {
+    const run = runCli(['init 20 20', 'create rect r 0 0 1 1', 'save a.svg', 'save'].join('\n'));
+    try {
+      const saves = run.stdout
+        .split('\n')
+        .filter((line) => line.startsWith('saved to '));
+      expect(saves).toEqual(['saved to a.svg (1 elements)', 'saved to a.svg (1 elements)']);
+    } finally {
+      run.cleanup();
+    }
+  });
+});

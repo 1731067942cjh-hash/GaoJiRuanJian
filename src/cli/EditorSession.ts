@@ -8,7 +8,10 @@ import type { SvgWriter } from '../serialization/SvgWriter';
 /** Mutable state owned by one REPL session. */
 export class EditorSession {
   document: Document | null = null;
-  currentPath: string | null = null;
+  /** Path used by the last successful read; preferred by bare `save`. */
+  readPath: string | null = null;
+  /** Last successful read or save path; fallback for bare `save`. */
+  lastPath: string | null = null;
   readonly history = new History();
 
   constructor(
