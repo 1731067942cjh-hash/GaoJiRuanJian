@@ -1,9 +1,10 @@
 # Lab1 Phase 1 完成计划：SVG 编辑器（CLI）
 
 - 依据文档：`phase_cli_1.md`（523 行，已逐节阅读）
-- 计划版本：v0.1（**待你确认，尚未开始写业务代码**）
+- 计划版本：v1.0（**已实施完成**；最终结构与验证结果见 `doc/README.md`）
 - 产物根目录：`/Users/ahs/Documents/dsh/高级软件开发/`
 - 交付形态：TypeScript 源码 + `doc/README.md` + 架构图 + 测试 + 带 `final` tag 的 git 历史
+- 实施状态：2026-10-19 完成 M0–M8；89 个测试通过；`final` tag 指向最终提交并推送到远程
 
 ---
 
@@ -496,8 +497,9 @@ package "io" {
 
 ---
 
-## 12. 下一步
+## 12. 实施结果
 
-1. 你确认 §3 的 A/B/C/D（尤其 **B 远程仓库与凭据**）；
-2. 我按 M0 → M8 推进，每个里程碑结束给出可验证结果；
-3. 实施期间所有新文件只写入 `/Users/ahs/Documents/dsh/高级软件开发/`。
+1. §3 决策已确认：A1（仓库根 = `高级软件开发/`）、B（SSH 远程）、C2（本机 PlantUML）、D（验证后立即实施）；
+2. M0–M8 已按计划完成，新增模块与计划偏差记入 `doc/README.md` 的修订记录；
+3. 全部文件位于 `/Users/ahs/Documents/dsh/高级软件开发/`，`npm run verify` 通过；
+4. 最终提交已打 `final` tag 并推送到 `git@github.com:1731067942cjh-hash/GaoJiRuanJian.git`。
