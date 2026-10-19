@@ -129,7 +129,7 @@ src/
 | 数字 | 最多 6 位小数、去尾零、`-0` 归一为 `0`；避免 `0.1+0.2` 噪声。 |
 | 未知 SVG 元素 | 警告并跳过（如 `<path>`）；未建模属性保存在 `extras` 并写回。 |
 | `read` 重复 id | 视为非法输入：`error: duplicate id: <id>`，当前文档不变。 |
-| `save` 无路径 | 若从未 read/save：`error: no file path. use 'save <file.svg>'`（规格外扩展）。 |
+| `save` 无路径 | 优先用最后一次 `read` 的路径；若从未 read，则回退到最后一次保存路径；两者都没有时：`error: no file path. use 'save <file.svg>'`（规格外扩展）。 |
 | `group` 插入位置 | 新容器放在第一个被收编图形原来的位置；跨父容器时归第一个目标所在父级。 |
 | `ungroup` 根级 | 按规格拒绝；只允许解组嵌套容器。 |
 | 非 TTY 输出 | 提示符与 banner 只在 TTY 显示；管道/脚本输出纯净，便于 golden 对比。交互式 PTY 已验证显示 `svg>`。 |
@@ -154,7 +154,7 @@ src/
 - **现象**：探测 `node t.ts` 时，`constructor(public readonly id: string)` 报 `ERR_UNSUPPORTED_TYPESCRIPT_SYNTAX`（strip-only 模式）。
 - **判断**：不能把 `node xxx.ts` 作为运行方式；否则所有 OOP 字段封装都要为运行时妥协。
 - **处理**：`npm run cli` 使用 **tsx**，类型检查用 `tsc --noEmit`；代码继续使用参数属性与严格类型。
-- **验证**：全部 83 个测试通过；`tsx` 与 `tsc` 版本固定并写入锁文件。
+- **验证**：全部 85 个测试通过；`tsx` 与 `tsc` 版本固定并写入锁文件。
 
 ### 3. npm 缓存导致的 EPERM
 
@@ -265,12 +265,12 @@ src/
 ### 1. 自动化检查
 
 - **严格类型**：`npm run typecheck`（`strict`、`noUnusedLocals`、`noUnusedParameters`、`noImplicitOverride`）。
-- **测试**：`npm test`，7 个测试文件、**83 个用例**，覆盖领域、命令、序列化、视图、解析、依赖规则与真实 CLI 集成。
+- **测试**：`npm test`，7 个测试文件、**85 个用例**，覆盖领域、命令、序列化、视图、解析、依赖规则与真实 CLI 集成。
 - **一键验证**：`npm run verify`（typecheck + test）；最终运行结果：
 
 ```text
 Test Files  7 passed (7)
-Tests       83 passed (83)
+Tests       85 passed (85)
 ```
 
 - **架构测试**：`test/unit/dependency.test.ts` 同时检查依赖方向与“一类一文件、文件名=类名”。
