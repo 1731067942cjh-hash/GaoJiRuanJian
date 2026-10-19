@@ -1,0 +1,9 @@
+node_modules/
+dist/
+coverage/
+.npm-cache/
+.DS_Store
+*.log
+
+# Assignment statement is kept next to the repository but is not part of the deliverable.
+phase_cli_1.md
