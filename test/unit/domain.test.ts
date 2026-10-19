@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { Circle } from '../../src/domain/Circle';
 import { Document } from '../../src/domain/Document';
+import { Ellipse } from '../../src/domain/Ellipse';
 import { DomainError } from '../../src/domain/errors/DomainError';
 import { Group } from '../../src/domain/Group';
 import { IdAllocator } from '../../src/domain/IdAllocator';
@@ -8,6 +9,7 @@ import { Line } from '../../src/domain/Line';
 import { formatNumber } from '../../src/domain/NumberFormat';
 import { Rect } from '../../src/domain/Rect';
 import { TextShape } from '../../src/domain/TextShape';
+import type { Shape } from '../../src/domain/Shape';
 import { Transform } from '../../src/domain/Transform';
 
 describe('Shape geometry', () => {
@@ -119,5 +121,53 @@ describe('formatting and ids', () => {
     ids.reserve('rect2');
     expect(ids.assign('rect')).toBe('rect3');
     expect(ids.assign('g')).toBe('g1');
+  });
+});
+
+describe('attribute whitelist', () => {
+  it('accepts geometry for every built-in type', () => {
+    const rect = new Rect('r', 0, 0, 1, 1);
+    const circle = new Circle('c', 0, 0, 1);
+    const ellipse = new Ellipse('e', 0, 0, 1, 1);
+    const line = new Line('l', 0, 0, 1, 1);
+    const text = new TextShape('t', 0, 0, 'x');
+
+    const cases: Array<[Shape, string, string]> = [
+      [rect, 'x', '10'],
+      [rect, 'y', '20'],
+      [rect, 'width', '30'],
+      [rect, 'height', '40'],
+      [circle, 'cx', '1'],
+      [circle, 'cy', '2'],
+      [circle, 'r', '3'],
+      [ellipse, 'cx', '4'],
+      [ellipse, 'cy', '5'],
+      [ellipse, 'rx', '6'],
+      [ellipse, 'ry', '7'],
+      [line, 'x1', '8'],
+      [line, 'y1', '9'],
+      [line, 'x2', '10'],
+      [line, 'y2', '11'],
+      [text, 'x', '12'],
+      [text, 'y', '13'],
+      [text, 'text', 'hello'],
+      [rect, 'fill', 'red'],
+      [rect, 'stroke', 'blue'],
+      [rect, 'stroke-width', '2'],
+    ];
+
+    for (const [shape, attribute, value] of cases) {
+      expect(shape.supportsAttribute(attribute)).toBe(true);
+      shape.setAttribute(attribute, value);
+      expect(shape.getAttribute(attribute)).toBe(value);
+    }
+  });
+
+  it('rejects cross-type geometry attributes', () => {
+    const rect = new Rect('r', 0, 0, 1, 1);
+    const text = new TextShape('t', 0, 0, 'x');
+    expect(rect.supportsAttribute('cx')).toBe(false);
+    expect(text.supportsAttribute('width')).toBe(false);
+    expect(() => text.setAttribute('width', '1')).toThrow('unknown attribute: width');
   });
 });

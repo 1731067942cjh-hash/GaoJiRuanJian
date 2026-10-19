@@ -217,3 +217,31 @@ describe('save path rules', () => {
     }
   });
 });
+
+describe('error recovery and ids', () => {
+  it('keeps the document unchanged when read fails', () => {
+    const run = runCli(
+      ['init 100 100', 'create rect r 0 0 10 10', 'read missing.svg', 'tree'].join('\n'),
+    );
+    try {
+      expect(run.stdout).toContain('error: cannot read file: missing.svg');
+      expect(run.stdout).toContain('svg (100x100)');
+      expect(run.stdout).toContain('rect#r');
+    } finally {
+      run.cleanup();
+    }
+  });
+
+  it('treats ids as case sensitive', () => {
+    const run = runCli(
+      ['init 10 10', 'create rect A 0 0 1 1', 'create rect a 5 5 1 1', 'tree'].join('\n'),
+    );
+    try {
+      expect(run.stdout).toContain('rect#A');
+      expect(run.stdout).toContain('rect#a');
+      expect(run.stdout).not.toContain('error:');
+    } finally {
+      run.cleanup();
+    }
+  });
+});
