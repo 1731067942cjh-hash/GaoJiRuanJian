@@ -1,5 +1,5 @@
 import { Circle } from '../domain/Circle';
-import type { Document } from '../domain/Document';
+import { Document } from '../domain/Document';
 import { Ellipse } from '../domain/Ellipse';
 import { Group } from '../domain/Group';
 import { Line } from '../domain/Line';
@@ -14,7 +14,7 @@ export class ShowRenderer implements ShapeVisitor<string[]> {
   render(shape: Shape): string[] {
     const parent = shape.parent;
     const parentLabel =
-      parent === null ? 'none' : parent instanceof Group ? parent.ref : parent.tag;
+      parent === null ? 'none' : parent instanceof Document ? 'svg' : parent.ref;
     return [`${shape.ref}  parent=${parentLabel}`, ...shape.accept(this).map((line) => `  ${line}`)];
   }
 

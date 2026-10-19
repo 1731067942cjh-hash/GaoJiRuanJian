@@ -113,3 +113,46 @@ describe('SvgWriter', () => {
     expect(roundTrip?.getAttribute('text')).toBe('<A&B>');
   });
 });
+
+describe('SvgReader edge cases', () => {
+  it('falls back to viewBox or defaults', () => {
+    const fromViewBox = reader().read(
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100"><g id="g1"/></svg>',
+    );
+    expect(fromViewBox.document.width).toBe(200);
+    expect(fromViewBox.document.height).toBe(100);
+
+    const defaults = reader().read(
+      '<svg xmlns="http://www.w3.org/2000/svg"><g id="g1"/></svg>',
+    );
+    expect(defaults.document.width).toBe(800);
+    expect(defaults.document.height).toBe(600);
+  });
+
+  it('avoids explicit ids that appear later in the file', () => {
+    const result = reader().read(
+      '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="1" height="1"/><rect id="rect1" width="1" height="1"/></svg>',
+    );
+    expect(result.warnings).toEqual(['assigned id rect2 to unnamed <rect>']);
+    expect(result.document.find('rect1')?.id).toBe('rect1');
+    expect(result.document.find('rect2')?.id).toBe('rect2');
+  });
+
+  it('composes nested group transforms', () => {
+    const result = reader().read(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100">
+        <g transform="translate(10,20)">
+          <g transform="scale(2)">
+            <rect id="r1" x="1" y="1" width="2" height="2"/>
+          </g>
+        </g>
+      </svg>`,
+    );
+    const rect = result.document.find('r1') as Rect;
+    expect(rect.readGeometry()).toEqual({ x: 12, y: 22, width: 4, height: 4 });
+  });
+
+  it('rejects malformed XML', () => {
+    expect(() => reader().read('<svg><rect></svg>')).toThrow();
+  });
+});

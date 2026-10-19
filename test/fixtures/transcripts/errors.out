@@ -1,0 +1,21 @@
+error: no document. use 'init' or 'read' first
+canvas 800x600 created
+error: undo not allowed after io command
+rect#r1 created
+error: id already exists: r1
+error: no such shape: r9
+error: no such container: node9
+error: not a container: r1
+error: unknown shape type: hexagon (is the plugin loaded?)
+error: unknown shape type: box (is the plugin loaded?)
+error: scale factor must be positive
+error: unknown attribute: opacity
+error: usage: group <newGid> <id1> <id2>...
+g#scene created
+error: cannot ungroup top-level container: scene
+g#outer created
+g#inner created in g#outer
+error: cannot group a container into its own descendant: outer
+error: cannot add container into its own descendant: outer
+error: cannot write file: /no/such/dir/x.svg
+error: cannot read file: /no/such/file.svg

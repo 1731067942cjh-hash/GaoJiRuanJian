@@ -1,0 +1,16 @@
+init 800 600
+create g scene
+create rect a 0 0 10 10 in scene
+create rect b 10 0 10 10 in scene
+tree
+group g1 a b
+tree
+undo
+tree
+redo
+tree
+save state.svg
+undo
+redo
+create rect c 0 0 5 5
+redo

@@ -1,5 +1,6 @@
 import { DOMParser, type Element } from '@xmldom/xmldom';
-import { XmlParseError, type XmlElement, type XmlTreeParser } from './XmlTree';
+import { XmlParseError } from './XmlParseError';
+import type { XmlElement, XmlTreeParser } from './XmlTree';
 
 /** Adapter that hides @xmldom/xmldom behind the small XmlTree port. */
 export class XmldomTree implements XmlTreeParser {

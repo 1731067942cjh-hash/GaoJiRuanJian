@@ -1,0 +1,21 @@
+undo
+init 800 600
+undo
+create rect r1 0 0 10 10
+create rect r1 0 0 10 10
+delete r9
+create rect r2 0 0 1 1 in node9
+create rect r3 0 0 1 1 in r1
+create hexagon h1 0 0
+create box n1 0 0 10 10 "title"
+scale r1 0
+set r1 opacity 0.5
+group g1 r1
+create g scene
+ungroup scene
+create g outer
+create g inner in outer
+group bad inner outer
+addto inner outer
+save /no/such/dir/x.svg
+read /no/such/file.svg

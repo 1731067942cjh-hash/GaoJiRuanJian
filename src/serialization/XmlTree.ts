@@ -9,10 +9,3 @@ export interface XmlElement {
 export interface XmlTreeParser {
   parse(source: string): XmlElement;
 }
-
-export class XmlParseError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'XmlParseError';
-  }
-}

@@ -1,6 +1,6 @@
 import { Document } from '../domain/Document';
 import { DomainError } from '../domain/errors/DomainError';
-import { Group } from '../domain/Group';
+import { Container } from '../domain/Container';
 import { IdAllocator } from '../domain/IdAllocator';
 import { IDENTITY, Transform, type Matrix } from '../domain/Transform';
 import type { Shape } from '../domain/Shape';
@@ -101,7 +101,7 @@ export class SvgReader {
       tag === 'text' ? element.text.trim() : null,
     );
 
-    if (shape instanceof Group) {
+    if (shape instanceof Container) {
       for (const child of element.children) {
         const built = this.build(child, matrix, allocator, warnings);
         if (built !== null) {

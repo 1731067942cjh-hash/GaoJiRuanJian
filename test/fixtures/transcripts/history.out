@@ -1,0 +1,30 @@
+canvas 800x600 created
+g#scene created
+rect#a created in g#scene
+rect#b created in g#scene
+svg (800x600)
+└── g#scene
+    ├── rect#a  x=0 y=0 w=10 h=10
+    └── rect#b  x=10 y=0 w=10 h=10
+g#g1 created with 2 children
+svg (800x600)
+└── g#scene
+    └── g#g1
+        ├── rect#a  x=0 y=0 w=10 h=10
+        └── rect#b  x=10 y=0 w=10 h=10
+g#g1 removed, 2 children restored
+svg (800x600)
+└── g#scene
+    ├── rect#a  x=0 y=0 w=10 h=10
+    └── rect#b  x=10 y=0 w=10 h=10
+g#g1 created with 2 children
+svg (800x600)
+└── g#scene
+    └── g#g1
+        ├── rect#a  x=0 y=0 w=10 h=10
+        └── rect#b  x=10 y=0 w=10 h=10
+saved to state.svg (4 elements)
+error: undo not allowed after io command
+error: undo not allowed after io command
+rect#c created
+error: nothing to redo

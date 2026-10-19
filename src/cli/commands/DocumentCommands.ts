@@ -1,7 +1,7 @@
 import { Document } from '../../domain/Document';
 import { DomainError } from '../../domain/errors/DomainError';
 import { formatNumber, parseNumber } from '../../domain/NumberFormat';
-import { XmlParseError } from '../../serialization/XmlTree';
+import { XmlParseError } from '../../serialization/XmlParseError';
 import type { SvgReadResult } from '../../serialization/SvgReader';
 import type { CommandMap } from './CommandDefinition';
 import { requireArgumentCount, requireDocument } from './helpers';

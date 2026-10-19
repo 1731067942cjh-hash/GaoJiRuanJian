@@ -242,3 +242,64 @@ describe('history', () => {
     expect(() => history.redo(document)).toThrow('nothing to redo');
   });
 });
+
+describe('structural edge cases', () => {
+  it('deletes a container with its subtree and restores it', () => {
+    const document = new Document(800, 600);
+    const group = new Group('g1');
+    group.appendChild(new Rect('a', 0, 0, 10, 10));
+    group.appendChild(new Rect('b', 10, 0, 10, 10));
+    document.appendChild(group);
+    const command = new DeleteCommand(group);
+    command.execute(document);
+    expect(document.find('g1')).toBeUndefined();
+    expect(document.find('a')).toBeUndefined();
+    expect(command.undo(document)).toBe('g#g1 restored into svg');
+    expect(document.find('a')?.parent?.id).toBe('g1');
+  });
+
+  it('groups across parents and restores both parents on undo', () => {
+    const document = new Document(800, 600);
+    const left = new Group('left');
+    const right = new Group('right');
+    const a = new Rect('a', 0, 0, 10, 10);
+    const b = new Rect('b', 20, 0, 10, 10);
+    left.appendChild(a);
+    right.appendChild(b);
+    document.appendChild(left);
+    document.appendChild(right);
+    const command = new GroupCommand('g', [a, b]);
+    command.execute(document);
+    expect(document.find('a')?.parent?.id).toBe('g');
+    expect(document.find('b')?.parent?.id).toBe('g');
+    expect(document.find('g')?.parent?.id).toBe('left');
+    command.undo(document);
+    expect(document.find('a')?.parent?.id).toBe('left');
+    expect(document.find('b')?.parent?.id).toBe('right');
+    expect(document.find('g')).toBeUndefined();
+  });
+
+  it('keeps the group at the position of the first target', () => {
+    const document = new Document(800, 600);
+    const x = new Rect('x', 0, 0, 1, 1);
+    const a = new Rect('a', 1, 0, 1, 1);
+    const y = new Rect('y', 2, 0, 1, 1);
+    const b = new Rect('b', 3, 0, 1, 1);
+    const z = new Rect('z', 4, 0, 1, 1);
+    for (const shape of [x, a, y, b, z]) document.appendChild(shape);
+    const command = new GroupCommand('g', [a, b]);
+    command.execute(document);
+    expect(document.children.map((shape) => shape.id)).toEqual(['x', 'g', 'y', 'z']);
+    command.undo(document);
+    expect(document.children.map((shape) => shape.id)).toEqual(['x', 'a', 'y', 'b', 'z']);
+  });
+
+  it('sets style on a container', () => {
+    const document = new Document(800, 600);
+    const group = new Group('g1');
+    document.appendChild(group);
+    const command = new SetCommand(group, 'fill', 'red');
+    expect(command.execute(document)).toBe('g#g1 updated: fill=red');
+    expect(group.fill).toBe('red');
+  });
+});
