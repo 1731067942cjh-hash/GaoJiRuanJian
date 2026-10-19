@@ -1,0 +1,38 @@
+@startuml
+title Lab1 Phase 1 · SVG Editor CLI · 模块依赖图
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam defaultFontSize 12
+skinparam nodesep 45
+skinparam ranksep 55
+left to right direction
+
+component "cli\nRepl · Tokenizer / CommandParser\nCommandRegistry · CommandDispatcher · EditorSession" as cli
+component "command\nEditCommand · History\n9 个命令类（覆盖 10 个编辑命令）" as cmd
+component "view\nTreeRenderer · ShowRenderer · HelpText" as view
+component "serialization\nSvgReader · SvgWriter · XmlTree 端口" as ser
+component "io\nFileGateway · NodeFileGateway" as io
+component "shape\nShapeFactory（类型注册表）" as shape
+component "domain\nShape · Container · Document\n六种图形 · Transform · IdAllocator" as domain
+
+cli --> cmd
+cli --> view
+cli --> ser
+cli --> io
+cmd --> shape
+cmd --> domain
+shape --> domain
+ser --> shape
+ser --> domain
+view --> domain
+
+note bottom of cli
+  名字分派 #1：命令名 → 实现
+  @todo 插件化阶段改为命令注册
+end note
+
+note bottom of shape
+  名字分派 #2：类型名 → 类
+  @todo 插件化阶段改为 ShapeProvider
+end note
+@enduml
