@@ -154,7 +154,7 @@ src/
 - **现象**：探测 `node t.ts` 时，`constructor(public readonly id: string)` 报 `ERR_UNSUPPORTED_TYPESCRIPT_SYNTAX`（strip-only 模式）。
 - **判断**：不能把 `node xxx.ts` 作为运行方式；否则所有 OOP 字段封装都要为运行时妥协。
 - **处理**：`npm run cli` 使用 **tsx**，类型检查用 `tsc --noEmit`；代码继续使用参数属性与严格类型。
-- **验证**：全部 85 个测试通过；`tsx` 与 `tsc` 版本固定并写入锁文件。
+- **验证**：全部 89 个测试通过；`tsx` 与 `tsc` 版本固定并写入锁文件。
 
 ### 3. npm 缓存导致的 EPERM
 
@@ -265,12 +265,12 @@ src/
 ### 1. 自动化检查
 
 - **严格类型**：`npm run typecheck`（`strict`、`noUnusedLocals`、`noUnusedParameters`、`noImplicitOverride`）。
-- **测试**：`npm test`，7 个测试文件、**85 个用例**，覆盖领域、命令、序列化、视图、解析、依赖规则与真实 CLI 集成。
+- **测试**：`npm test`，7 个测试文件、**89 个用例**，覆盖领域、命令、序列化、视图、解析、依赖规则与真实 CLI 集成。
 - **一键验证**：`npm run verify`（typecheck + test）；最终运行结果：
 
 ```text
 Test Files  7 passed (7)
-Tests       85 passed (85)
+Tests       89 passed (89)
 ```
 
 - **架构测试**：`test/unit/dependency.test.ts` 同时检查依赖方向与“一类一文件、文件名=类名”。
