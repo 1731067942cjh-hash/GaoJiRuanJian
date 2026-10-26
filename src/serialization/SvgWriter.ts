@@ -3,7 +3,7 @@ import type { Document } from '../domain/Document';
 import { Ellipse } from '../domain/Ellipse';
 import type { Group } from '../domain/Group';
 import { Line } from '../domain/Line';
-import { formatNumber } from '../domain/NumberFormat';
+import { NumberFormat } from '../domain/NumberFormat';
 import { Rect } from '../domain/Rect';
 import type { Shape } from '../domain/Shape';
 import type { ShapeVisitor } from '../domain/ShapeVisitor';
@@ -25,8 +25,8 @@ export class SvgWriter implements ShapeVisitor<void> {
   }
 
   visitDocument(document: Document): void {
-    const width = formatNumber(document.width);
-    const height = formatNumber(document.height);
+    const width = NumberFormat.format(document.width);
+    const height = NumberFormat.format(document.height);
     this.lines.push('<?xml version="1.0" encoding="UTF-8"?>');
     this.lines.push(
       `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`,
@@ -55,54 +55,54 @@ export class SvgWriter implements ShapeVisitor<void> {
 
   visitRect(rect: Rect): void {
     const attributes = this.attributes(rect, [
-      ['x', formatNumber(rect.x)],
-      ['y', formatNumber(rect.y)],
-      ['width', formatNumber(rect.width)],
-      ['height', formatNumber(rect.height)],
+      ['x', NumberFormat.format(rect.x)],
+      ['y', NumberFormat.format(rect.y)],
+      ['width', NumberFormat.format(rect.width)],
+      ['height', NumberFormat.format(rect.height)],
     ]);
     this.lines.push(`${this.indent()}<rect ${attributes}/>`);
   }
 
   visitCircle(circle: Circle): void {
     const attributes = this.attributes(circle, [
-      ['cx', formatNumber(circle.cx)],
-      ['cy', formatNumber(circle.cy)],
-      ['r', formatNumber(circle.r)],
+      ['cx', NumberFormat.format(circle.cx)],
+      ['cy', NumberFormat.format(circle.cy)],
+      ['r', NumberFormat.format(circle.r)],
     ]);
     this.lines.push(`${this.indent()}<circle ${attributes}/>`);
   }
 
   visitEllipse(ellipse: Ellipse): void {
     const attributes = this.attributes(ellipse, [
-      ['cx', formatNumber(ellipse.cx)],
-      ['cy', formatNumber(ellipse.cy)],
-      ['rx', formatNumber(ellipse.rx)],
-      ['ry', formatNumber(ellipse.ry)],
+      ['cx', NumberFormat.format(ellipse.cx)],
+      ['cy', NumberFormat.format(ellipse.cy)],
+      ['rx', NumberFormat.format(ellipse.rx)],
+      ['ry', NumberFormat.format(ellipse.ry)],
     ]);
     this.lines.push(`${this.indent()}<ellipse ${attributes}/>`);
   }
 
   visitLine(line: Line): void {
     const attributes = this.attributes(line, [
-      ['x1', formatNumber(line.x1)],
-      ['y1', formatNumber(line.y1)],
-      ['x2', formatNumber(line.x2)],
-      ['y2', formatNumber(line.y2)],
+      ['x1', NumberFormat.format(line.x1)],
+      ['y1', NumberFormat.format(line.y1)],
+      ['x2', NumberFormat.format(line.x2)],
+      ['y2', NumberFormat.format(line.y2)],
     ]);
     this.lines.push(`${this.indent()}<line ${attributes}/>`);
   }
 
   visitText(text: TextShape): void {
     const attributes = this.attributes(text, [
-      ['x', formatNumber(text.x)],
-      ['y', formatNumber(text.y)],
+      ['x', NumberFormat.format(text.x)],
+      ['y', NumberFormat.format(text.y)],
     ]);
     if (text.content.length === 0) {
       this.lines.push(`${this.indent()}<text ${attributes}/>`);
       return;
     }
     this.lines.push(
-      `${this.indent()}<text ${attributes}>${escapeText(text.content)}</text>`,
+      `${this.indent()}<text ${attributes}>${this.escapeText(text.content)}</text>`,
     );
   }
 
@@ -114,22 +114,22 @@ export class SvgWriter implements ShapeVisitor<void> {
     for (const [name, value] of shape.extras) {
       pairs.push([name, value]);
     }
-    return pairs.map(([name, value]) => `${name}="${escapeAttribute(value)}"`).join(' ');
+    return pairs.map(([name, value]) => `${name}="${this.escapeAttribute(value)}"`).join(' ');
   }
 
   private indent(): string {
     return '  '.repeat(this.depth);
   }
-}
 
-function escapeAttribute(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
+  private escapeAttribute(value: string): string {
+    return value
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
 
-function escapeText(value: string): string {
-  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  private escapeText(value: string): string {
+    return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
 }

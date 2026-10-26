@@ -1,8 +1,6 @@
-import { formatNumber, parseNumber } from './NumberFormat';
+import { NumberFormat } from './NumberFormat';
 import {
   Shape,
-  geometryNumber,
-  numericAttribute,
   type AttributeMap,
   type GeometryRecord,
 } from './Shape';
@@ -32,14 +30,14 @@ export class TextShape extends Shape {
   static fromArgs(id: string, args: readonly string[]): TextShape {
     return new TextShape(
       id,
-      parseNumber(args[0], 'x'),
-      parseNumber(args[1], 'y'),
+      NumberFormat.parse(args[0], 'x'),
+      NumberFormat.parse(args[1], 'y'),
       args[2] ?? '',
     );
   }
 
   static fromAttributes(id: string, attrs: AttributeMap, text: string | null): TextShape {
-    const shape = new TextShape(id, numericAttribute(attrs, 'x'), numericAttribute(attrs, 'y'), text ?? '');
+    const shape = new TextShape(id, this.numericAttribute(attrs, 'x'), this.numericAttribute(attrs, 'y'), text ?? '');
     shape.loadCommonAttributes(attrs, GEOMETRY_ATTRIBUTES);
     return shape;
   }
@@ -81,7 +79,7 @@ export class TextShape extends Shape {
     if (fontSize !== undefined) {
       const numeric = Number(fontSize);
       if (Number.isFinite(numeric)) {
-        this.setExtra('font-size', formatNumber(numeric * scale));
+        this.setExtra('font-size', NumberFormat.format(numeric * scale));
       }
     }
   }
@@ -91,8 +89,8 @@ export class TextShape extends Shape {
   }
 
   override writeGeometry(geometry: GeometryRecord): void {
-    this._x = geometryNumber(geometry, 'x');
-    this._y = geometryNumber(geometry, 'y');
+    this._x = this.geometryNumber(geometry, 'x');
+    this._y = this.geometryNumber(geometry, 'y');
   }
 
   override anchor(): { x: number; y: number } {
@@ -107,8 +105,8 @@ export class TextShape extends Shape {
     const common = super.getAttribute(name);
     if (common !== undefined) return common;
     if (name === 'text') return this._content;
-    if (name === 'x') return formatNumber(this._x);
-    if (name === 'y') return formatNumber(this._y);
+    if (name === 'x') return NumberFormat.format(this._x);
+    if (name === 'y') return NumberFormat.format(this._y);
     return undefined;
   }
 
@@ -118,11 +116,11 @@ export class TextShape extends Shape {
       return;
     }
     if (name === 'x') {
-      this._x = parseNumber(value, 'x');
+      this._x = NumberFormat.parse(value, 'x');
       return;
     }
     if (name === 'y') {
-      this._y = parseNumber(value, 'y');
+      this._y = NumberFormat.parse(value, 'y');
       return;
     }
     super.setAttribute(name, value);

@@ -1,92 +1,53 @@
-import { Document } from '../../domain/Document';
-import { DomainError } from '../../domain/errors/DomainError';
-import { formatNumber, parseNumber } from '../../domain/NumberFormat';
-import { XmlParseError } from '../../serialization/XmlParseError';
-import type { SvgReadResult } from '../../serialization/SvgReader';
+import { NumberFormat } from '../../domain/NumberFormat';
 import type { CommandMap } from './CommandDefinition';
-import { requireArgumentCount, requireDocument } from './helpers';
+import { CommandArguments } from './CommandArguments';
 
-export function registerDocumentCommands(commands: CommandMap): void {
-  commands.set('init', {
-    requiresDocument: false,
-    run: (session, args) => {
-      requireArgumentCount(args, 0, 2, 'init [w] [h]');
-      const width = args.length >= 1 ? parseNumber(args[0], 'width') : 800;
-      const height = args.length === 2 ? parseNumber(args[1], 'height') : 600;
-      const document = new Document(width, height);
-      session.document = document;
-      session.readPath = null;
-      session.lastPath = null;
-      session.history.lock();
-      return [`canvas ${formatNumber(width)}x${formatNumber(height)} created`];
-    },
-  });
-
-  commands.set('read', {
-    requiresDocument: false,
-    run: async (session, args) => {
-      requireArgumentCount(args, 1, 1, 'read <file.svg>');
-      const path = args[0];
-      let source: string;
-      try {
-        source = await session.gateway.readText(path);
-      } catch {
-        throw new DomainError(`cannot read file: ${path}`);
-      }
-      let result: SvgReadResult;
-      try {
-        result = session.reader.read(source);
-      } catch (error) {
-        if (error instanceof XmlParseError) {
-          throw new DomainError(`cannot parse file: ${path}`);
+/** Registers the document commands; EditorSession owns their lifecycle. */
+export class DocumentCommands {
+  register(commands: CommandMap): void {
+    commands.set('init', {
+      requiresDocument: false,
+      run: (session, args) => {
+        CommandArguments.requireCount(args, 0, 2, 'init [w] [h]');
+        const width = args.length >= 1 ? NumberFormat.parse(args[0], 'width') : 800;
+        const height = args.length === 2 ? NumberFormat.parse(args[1], 'height') : 600;
+        session.init(width, height);
+        return [`canvas ${NumberFormat.format(width)}x${NumberFormat.format(height)} created`];
+      },
+    });
+    commands.set('read', {
+      requiresDocument: false,
+      run: async (session, args) => {
+        CommandArguments.requireCount(args, 1, 1, 'read <file.svg>');
+        const path = args[0];
+        const result = await session.read(path);
+        return [
+          ...result.warnings.map(warning => `warning: ${warning}`),
+          `read ${path} (${result.document.elementCount} elements)`,
+        ];
+      },
+    });
+    commands.set('save', {
+      requiresDocument: true,
+      run: async (session, args) => {
+        CommandArguments.requireCount(args, 0, 1, 'save [file.svg]');
+        const path = await session.save(args[0]);
+        return [`saved to ${path} (${session.requireDocument().elementCount} elements)`];
+      },
+    });
+    commands.set('canvas', {
+      requiresDocument: true,
+      run: (session, args) => {
+        const document = session.requireDocument();
+        if (args.length === 0) {
+          return [`canvas ${NumberFormat.format(document.width)}x${NumberFormat.format(document.height)}`];
         }
-        throw error;
-      }
-      session.document = result.document;
-      session.readPath = path;
-      session.lastPath = path;
-      session.history.lock();
-      return [
-        ...result.warnings.map((warning) => `warning: ${warning}`),
-        `read ${path} (${result.document.elementCount} elements)`,
-      ];
-    },
-  });
-
-  commands.set('save', {
-    requiresDocument: true,
-    run: async (session, args) => {
-      requireArgumentCount(args, 0, 1, 'save [file.svg]');
-      const document = requireDocument(session);
-      const path = args[0] ?? session.readPath ?? session.lastPath;
-      if (path === null || path.length === 0) {
-        throw new DomainError("no file path. use 'save <file.svg>'");
-      }
-      const svg = session.writer.write(document);
-      try {
-        await session.gateway.writeText(path, svg);
-      } catch {
-        throw new DomainError(`cannot write file: ${path}`);
-      }
-      session.lastPath = path;
-      session.history.lock();
-      return [`saved to ${path} (${document.elementCount} elements)`];
-    },
-  });
-
-  commands.set('canvas', {
-    requiresDocument: true,
-    run: (session, args) => {
-      const document = requireDocument(session);
-      if (args.length === 0) {
-        return [`canvas ${formatNumber(document.width)}x${formatNumber(document.height)}`];
-      }
-      requireArgumentCount(args, 2, 2, 'canvas [w] [h]');
-      const width = parseNumber(args[0], 'width');
-      const height = parseNumber(args[1], 'height');
-      document.resize(width, height);
-      session.history.lock();
-      return [`canvas resized to ${formatNumber(width)}x${formatNumber(height)}`];
-    },
-  });
+        CommandArguments.requireCount(args, 2, 2, 'canvas [w] [h]');
+        const width = NumberFormat.parse(args[0], 'width');
+        const height = NumberFormat.parse(args[1], 'height');
+        session.resize(width, height);
+        return [`canvas resized to ${NumberFormat.format(width)}x${NumberFormat.format(height)}`];
+      },
+    });
+  }
 }

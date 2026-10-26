@@ -1,28 +1,33 @@
-import type { Shape, GeometryRecord } from '../domain/Shape';
+import { Container } from '../domain/Container';
 import { DomainError } from '../domain/errors/DomainError';
+import type { Shape, GeometryRecord } from '../domain/Shape';
 
-export interface GeometrySnapshot {
-  readonly shape: Shape;
-  readonly geometry: GeometryRecord;
-}
+/** Memento of a subtree's absolute geometry, with transactional application. */
+export class GeometrySnapshot {
+  private readonly entries: ReadonlyArray<{ shape: Shape; geometry: GeometryRecord }>;
 
-/** Capture absolute geometry so undo/redo never accumulates float error. */
-export function captureGeometry(shapes: readonly Shape[]): GeometrySnapshot[] {
-  return shapes.map((shape) => ({ shape, geometry: shape.readGeometry() }));
-}
-
-export function restoreGeometry(snapshots: readonly GeometrySnapshot[]): void {
-  for (const snapshot of snapshots) {
-    snapshot.shape.writeGeometry(snapshot.geometry);
+  constructor(shape: Shape) {
+    const shapes = shape instanceof Container ? shape.descendants() : [shape];
+    this.entries = shapes.map(target => ({ shape: target, geometry: target.readGeometry() }));
   }
-}
 
-/** Restore the entire edited subtree if any geometry overflows. */
-export function validateGeometry(snapshots: readonly GeometrySnapshot[]): void {
-  for (const snapshot of snapshots) {
-    if (Object.values(snapshot.shape.readGeometry()).some(value => !Number.isFinite(value))) {
-      restoreGeometry(snapshots);
-      throw new DomainError('geometry must remain finite');
+  get size(): number { return this.entries.length; }
+
+  apply(operation: () => void): void {
+    try {
+      operation();
+      for (const { shape } of this.entries) {
+        if (Object.values(shape.readGeometry()).some(value => !Number.isFinite(value))) {
+          throw new DomainError('geometry must remain finite');
+        }
+      }
+    } catch (error) {
+      this.restore();
+      throw error;
     }
+  }
+
+  restore(): void {
+    for (const { shape, geometry } of this.entries) shape.writeGeometry(geometry);
   }
 }

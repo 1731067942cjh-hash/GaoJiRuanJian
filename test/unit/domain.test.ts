@@ -6,7 +6,7 @@ import { DomainError } from '../../src/domain/errors/DomainError';
 import { Group } from '../../src/domain/Group';
 import { IdAllocator } from '../../src/domain/IdAllocator';
 import { Line } from '../../src/domain/Line';
-import { formatNumber } from '../../src/domain/NumberFormat';
+import { NumberFormat } from '../../src/domain/NumberFormat';
 import { Rect } from '../../src/domain/Rect';
 import { TextShape } from '../../src/domain/TextShape';
 import type { Shape } from '../../src/domain/Shape';
@@ -61,6 +61,18 @@ describe('Shape geometry', () => {
 });
 
 describe('Document', () => {
+  it('rejects dual ownership and cycles before changing a container', () => {
+    const outer = new Group('outer');
+    const inner = new Group('inner');
+    const other = new Group('other');
+    outer.appendChild(inner);
+    expect(() => other.appendChild(inner)).toThrow('shape already has a parent: inner');
+    expect(() => inner.appendChild(outer)).toThrow('cannot add container into its own descendant: outer');
+    expect(outer.children).toEqual([inner]);
+    expect(inner.parent).toBe(outer);
+    expect(inner.children).toEqual([]);
+    expect(other.children).toEqual([]);
+  });
   it('finds shapes recursively and does not expose the root', () => {
     const doc = new Document(800, 600);
     const group = new Group('g1');
@@ -109,10 +121,10 @@ describe('attributes', () => {
 
 describe('formatting and ids', () => {
   it('formats numbers without losing their stored precision', () => {
-    expect(Number(formatNumber(0.1 + 0.2))).toBe(0.1 + 0.2);
-    expect(formatNumber(130)).toBe('130');
-    expect(formatNumber(-0)).toBe('0');
-    expect(formatNumber(1.5)).toBe('1.5');
+    expect(Number(NumberFormat.format(0.1 + 0.2))).toBe(0.1 + 0.2);
+    expect(NumberFormat.format(130)).toBe('130');
+    expect(NumberFormat.format(-0)).toBe('0');
+    expect(NumberFormat.format(1.5)).toBe('1.5');
   });
 
   it('allocates the next free tag-based id', () => {

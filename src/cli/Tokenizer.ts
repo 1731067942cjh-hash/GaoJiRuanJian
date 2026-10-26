@@ -25,7 +25,7 @@ export class Tokenizer {
           if (escaped === undefined) {
             throw new DomainError('unterminated quote');
           }
-          current += unescape(escaped);
+          current += this.unescape(escaped);
           index += 1;
         } else if (character === '"') {
           inQuotes = false;
@@ -60,10 +60,10 @@ export class Tokenizer {
     }
     return tokens;
   }
-}
 
-function unescape(character: string): string {
-  if (character === 'n') return '\n';
-  if (character === 't') return '\t';
-  return character;
+  private unescape(character: string): string {
+    if (character === 'n') return '\n';
+    if (character === 't') return '\t';
+    return character;
+  }
 }

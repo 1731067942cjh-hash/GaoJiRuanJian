@@ -29,12 +29,12 @@ export class Transform {
 
   static isIdentity(matrix: Matrix): boolean {
     return (
-      approximately(matrix.a, 1) &&
-      approximately(matrix.b, 0) &&
-      approximately(matrix.c, 0) &&
-      approximately(matrix.d, 1) &&
-      approximately(matrix.e, 0) &&
-      approximately(matrix.f, 0)
+      Transform.approximately(matrix.a, 1) &&
+      Transform.approximately(matrix.b, 0) &&
+      Transform.approximately(matrix.c, 0) &&
+      Transform.approximately(matrix.d, 1) &&
+      Transform.approximately(matrix.e, 0) &&
+      Transform.approximately(matrix.f, 0)
     );
   }
 
@@ -80,7 +80,7 @@ export class Transform {
           e: numbers[4],
           f: numbers[5],
         };
-        if (approximately(candidate.b, 0) && approximately(candidate.c, 0)) {
+        if (Transform.approximately(candidate.b, 0) && Transform.approximately(candidate.c, 0)) {
           matrix = Transform.multiply(matrix, candidate);
         } else {
           unsupported.push('matrix (rotation/skew)');
@@ -98,8 +98,8 @@ export class Transform {
 
     return { matrix, unsupported };
   }
-}
 
-function approximately(value: number, expected: number): boolean {
-  return Math.abs(value - expected) < 1e-9;
+  private static approximately(value: number, expected: number): boolean {
+    return Math.abs(value - expected) < 1e-9;
+  }
 }

@@ -2,7 +2,7 @@ import type { Container } from './Container';
 import type { ShapeVisitor } from './ShapeVisitor';
 import type { Matrix } from './Transform';
 import { DomainError } from './errors/DomainError';
-import { formatNumber, parseNumber } from './NumberFormat';
+import { NumberFormat } from './NumberFormat';
 
 /** Attributes of an element as read from an SVG file. */
 export type AttributeMap = ReadonlyMap<string, string>;
@@ -31,7 +31,7 @@ const COMMON_ATTRIBUTES = new Set(['fill', 'stroke', 'stroke-width']);
  */
 export abstract class Shape {
   readonly id: string;
-  parent: Container | null = null;
+  private _parent: Container | null = null;
 
   private _fill: string | undefined;
   private _stroke: string | undefined;
@@ -50,6 +50,13 @@ export abstract class Shape {
 
   get ref(): string {
     return `${this.tag}#${this.id}`;
+  }
+
+  get parent(): Container | null { return this._parent; }
+
+  /** Only the Composite implementation may update ownership. */
+  protected static setParent(shape: Shape, parent: Container | null): void {
+    shape._parent = parent;
   }
 
   abstract accept<T>(visitor: ShapeVisitor<T>): T;
@@ -146,24 +153,19 @@ export abstract class Shape {
       this._extras.set(name, value);
     }
   }
-}
 
-/** Read a numeric attribute, defaulting to 0 when it is absent. */
-export function numericAttribute(attrs: AttributeMap, name: string, fallback = 0): number {
-  const raw = attrs.get(name);
-  return raw === undefined ? fallback : parseNumber(raw, name);
-}
-
-/** Read a numeric field from a geometry snapshot written by a shape. */
-export function geometryNumber(geometry: GeometryRecord, name: string): number {
-  const value = geometry[name];
-  if (typeof value !== 'number' || !Number.isFinite(value)) {
-    throw new DomainError(`invalid geometry value: ${name}`);
+  /** Read a numeric attribute, defaulting to 0 when it is absent. */
+  protected static numericAttribute(attrs: AttributeMap, name: string, fallback = 0): number {
+    const raw = attrs.get(name);
+    return raw === undefined ? fallback : NumberFormat.parse(raw, name);
   }
-  return value;
-}
 
-/** Format a geometry value for display and serialization. */
-export function geometryText(value: number): string {
-  return formatNumber(value);
+  /** Read a numeric field from a geometry snapshot written by a shape. */
+  protected geometryNumber(geometry: GeometryRecord, name: string): number {
+    const value = geometry[name];
+    if (typeof value !== 'number' || !Number.isFinite(value)) {
+      throw new DomainError(`invalid geometry value: ${name}`);
+    }
+    return value;
+  }
 }

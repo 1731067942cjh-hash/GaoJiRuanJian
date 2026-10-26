@@ -1,10 +1,9 @@
 import { DomainError } from '../domain/errors/DomainError';
 import type { EditorSession } from './EditorSession';
-import { registerDocumentCommands } from './commands/DocumentCommands';
-import { registerEditCommands } from './commands/EditCommands';
-import { registerViewCommands } from './commands/ViewCommands';
+import { DocumentCommands } from './commands/DocumentCommands';
+import { EditCommands } from './commands/EditCommands';
+import { ViewCommands } from './commands/ViewCommands';
 import type { CommandDefinition, CommandMap } from './commands/CommandDefinition';
-import { requireDocument } from './commands/helpers';
 
 /**
  * The only "command name -> implementation" dispatch point.
@@ -16,9 +15,9 @@ export class CommandRegistry {
   private readonly commands: CommandMap = new Map();
 
   constructor() {
-    registerDocumentCommands(this.commands);
-    registerEditCommands(this.commands);
-    registerViewCommands(this.commands);
+    new DocumentCommands().register(this.commands);
+    new EditCommands().register(this.commands);
+    new ViewCommands().register(this.commands);
   }
 
   has(name: string): boolean {
@@ -39,7 +38,7 @@ export class CommandRegistry {
       throw new DomainError(`unknown command: ${name}`);
     }
     if (definition.requiresDocument) {
-      requireDocument(session);
+      session.requireDocument();
     }
     return definition.run(session, args);
   }

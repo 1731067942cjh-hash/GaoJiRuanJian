@@ -1,8 +1,6 @@
-import { formatNumber, parseNumber } from './NumberFormat';
+import { NumberFormat } from './NumberFormat';
 import {
   Shape,
-  geometryNumber,
-  numericAttribute,
   type AttributeMap,
   type GeometryRecord,
 } from './Shape';
@@ -45,10 +43,10 @@ export class Line extends Shape {
     const stroke = args.length > 4 ? args[4] : undefined;
     return new Line(
       id,
-      parseNumber(args[0], 'x1'),
-      parseNumber(args[1], 'y1'),
-      parseNumber(args[2], 'x2'),
-      parseNumber(args[3], 'y2'),
+      NumberFormat.parse(args[0], 'x1'),
+      NumberFormat.parse(args[1], 'y1'),
+      NumberFormat.parse(args[2], 'x2'),
+      NumberFormat.parse(args[3], 'y2'),
       stroke,
     );
   }
@@ -56,10 +54,10 @@ export class Line extends Shape {
   static fromAttributes(id: string, attrs: AttributeMap, _text: string | null): Line {
     const line = new Line(
       id,
-      numericAttribute(attrs, 'x1'),
-      numericAttribute(attrs, 'y1'),
-      numericAttribute(attrs, 'x2'),
-      numericAttribute(attrs, 'y2'),
+      this.numericAttribute(attrs, 'x1'),
+      this.numericAttribute(attrs, 'y1'),
+      this.numericAttribute(attrs, 'x2'),
+      this.numericAttribute(attrs, 'y2'),
     );
     line.loadCommonAttributes(attrs, GEOMETRY_ATTRIBUTES);
     return line;
@@ -116,10 +114,10 @@ export class Line extends Shape {
   }
 
   override writeGeometry(geometry: GeometryRecord): void {
-    this._x1 = geometryNumber(geometry, 'x1');
-    this._y1 = geometryNumber(geometry, 'y1');
-    this._x2 = geometryNumber(geometry, 'x2');
-    this._y2 = geometryNumber(geometry, 'y2');
+    this._x1 = this.geometryNumber(geometry, 'x1');
+    this._y1 = this.geometryNumber(geometry, 'y1');
+    this._x2 = this.geometryNumber(geometry, 'x2');
+    this._y2 = this.geometryNumber(geometry, 'y2');
   }
 
   override anchor(): { x: number; y: number } {
@@ -133,28 +131,28 @@ export class Line extends Shape {
   override getAttribute(name: string): string | undefined {
     const common = super.getAttribute(name);
     if (common !== undefined) return common;
-    if (name === 'x1') return formatNumber(this._x1);
-    if (name === 'y1') return formatNumber(this._y1);
-    if (name === 'x2') return formatNumber(this._x2);
-    if (name === 'y2') return formatNumber(this._y2);
+    if (name === 'x1') return NumberFormat.format(this._x1);
+    if (name === 'y1') return NumberFormat.format(this._y1);
+    if (name === 'x2') return NumberFormat.format(this._x2);
+    if (name === 'y2') return NumberFormat.format(this._y2);
     return undefined;
   }
 
   override setAttribute(name: string, value: string): void {
     if (name === 'x1') {
-      this._x1 = parseNumber(value, 'x1');
+      this._x1 = NumberFormat.parse(value, 'x1');
       return;
     }
     if (name === 'y1') {
-      this._y1 = parseNumber(value, 'y1');
+      this._y1 = NumberFormat.parse(value, 'y1');
       return;
     }
     if (name === 'x2') {
-      this._x2 = parseNumber(value, 'x2');
+      this._x2 = NumberFormat.parse(value, 'x2');
       return;
     }
     if (name === 'y2') {
-      this._y2 = parseNumber(value, 'y2');
+      this._y2 = NumberFormat.parse(value, 'y2');
       return;
     }
     super.setAttribute(name, value);

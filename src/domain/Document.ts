@@ -12,7 +12,7 @@ export class Document extends Container {
 
   constructor(width: number, height: number) {
     super('svg');
-    assertCanvasSize(width, height);
+    Document.assertCanvasSize(width, height);
     this._width = width;
     this._height = height;
   }
@@ -26,7 +26,7 @@ export class Document extends Container {
   }
 
   resize(width: number, height: number): void {
-    assertCanvasSize(width, height);
+    Document.assertCanvasSize(width, height);
     this._width = width;
     this._height = height;
   }
@@ -47,10 +47,10 @@ export class Document extends Container {
   override accept<T>(visitor: ShapeVisitor<T>): T {
     return visitor.visitDocument(this);
   }
-}
 
-function assertCanvasSize(width: number, height: number): void {
-  if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
-    throw new DomainError('canvas size must be positive');
+  private static assertCanvasSize(width: number, height: number): void {
+    if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
+      throw new DomainError('canvas size must be positive');
+    }
   }
 }

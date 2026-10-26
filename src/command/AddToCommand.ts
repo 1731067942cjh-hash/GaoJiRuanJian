@@ -3,7 +3,7 @@ import type { Document } from '../domain/Document';
 import { DomainError } from '../domain/errors/DomainError';
 import type { Group } from '../domain/Group';
 import type { Shape } from '../domain/Shape';
-import { containerLabel } from './commandFormat';
+import { CommandFormat } from './CommandFormat';
 import type { EditCommand } from './EditCommand';
 
 export class AddToCommand implements EditCommand {
@@ -46,6 +46,6 @@ export class AddToCommand implements EditCommand {
     }
     this.target.removeChild(this.shape);
     this.oldParent.insertChild(this.shape, this.oldIndex);
-    return `${this.shape.ref} moved back into ${containerLabel(this.oldParent)}`;
+    return `${this.shape.ref} moved back into ${CommandFormat.containerLabel(this.oldParent)}`;
   }
 }

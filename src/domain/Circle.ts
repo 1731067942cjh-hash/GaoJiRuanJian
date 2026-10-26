@@ -1,8 +1,6 @@
-import { formatNumber, parseNumber } from './NumberFormat';
+import { NumberFormat } from './NumberFormat';
 import {
   Shape,
-  geometryNumber,
-  numericAttribute,
   type AttributeMap,
   type GeometryRecord,
 } from './Shape';
@@ -36,9 +34,9 @@ export class Circle extends Shape {
     const fill = args.length > 3 ? args[3] : undefined;
     return new Circle(
       id,
-      parseNumber(args[0], 'cx'),
-      parseNumber(args[1], 'cy'),
-      parseNumber(args[2], 'r'),
+      NumberFormat.parse(args[0], 'cx'),
+      NumberFormat.parse(args[1], 'cy'),
+      NumberFormat.parse(args[2], 'r'),
       fill,
     );
   }
@@ -46,9 +44,9 @@ export class Circle extends Shape {
   static fromAttributes(id: string, attrs: AttributeMap, _text: string | null): Circle {
     const circle = new Circle(
       id,
-      numericAttribute(attrs, 'cx'),
-      numericAttribute(attrs, 'cy'),
-      numericAttribute(attrs, 'r'),
+      this.numericAttribute(attrs, 'cx'),
+      this.numericAttribute(attrs, 'cy'),
+      this.numericAttribute(attrs, 'r'),
     );
     circle.loadCommonAttributes(attrs, GEOMETRY_ATTRIBUTES);
     return circle;
@@ -95,9 +93,9 @@ export class Circle extends Shape {
   }
 
   override writeGeometry(geometry: GeometryRecord): void {
-    this._cx = geometryNumber(geometry, 'cx');
-    this._cy = geometryNumber(geometry, 'cy');
-    this._r = geometryNumber(geometry, 'r');
+    this._cx = this.geometryNumber(geometry, 'cx');
+    this._cy = this.geometryNumber(geometry, 'cy');
+    this._r = this.geometryNumber(geometry, 'r');
   }
 
   override anchor(): { x: number; y: number } {
@@ -111,23 +109,23 @@ export class Circle extends Shape {
   override getAttribute(name: string): string | undefined {
     const common = super.getAttribute(name);
     if (common !== undefined) return common;
-    if (name === 'cx') return formatNumber(this._cx);
-    if (name === 'cy') return formatNumber(this._cy);
-    if (name === 'r') return formatNumber(this._r);
+    if (name === 'cx') return NumberFormat.format(this._cx);
+    if (name === 'cy') return NumberFormat.format(this._cy);
+    if (name === 'r') return NumberFormat.format(this._r);
     return undefined;
   }
 
   override setAttribute(name: string, value: string): void {
     if (name === 'cx') {
-      this._cx = parseNumber(value, 'cx');
+      this._cx = NumberFormat.parse(value, 'cx');
       return;
     }
     if (name === 'cy') {
-      this._cy = parseNumber(value, 'cy');
+      this._cy = NumberFormat.parse(value, 'cy');
       return;
     }
     if (name === 'r') {
-      this._r = parseNumber(value, 'r');
+      this._r = NumberFormat.parse(value, 'r');
       return;
     }
     super.setAttribute(name, value);

@@ -1,8 +1,6 @@
-import { formatNumber, parseNumber } from './NumberFormat';
+import { NumberFormat } from './NumberFormat';
 import {
   Shape,
-  geometryNumber,
-  numericAttribute,
   type AttributeMap,
   type GeometryRecord,
 } from './Shape';
@@ -45,10 +43,10 @@ export class Ellipse extends Shape {
     const fill = args.length > 4 ? args[4] : undefined;
     return new Ellipse(
       id,
-      parseNumber(args[0], 'cx'),
-      parseNumber(args[1], 'cy'),
-      parseNumber(args[2], 'rx'),
-      parseNumber(args[3], 'ry'),
+      NumberFormat.parse(args[0], 'cx'),
+      NumberFormat.parse(args[1], 'cy'),
+      NumberFormat.parse(args[2], 'rx'),
+      NumberFormat.parse(args[3], 'ry'),
       fill,
     );
   }
@@ -56,10 +54,10 @@ export class Ellipse extends Shape {
   static fromAttributes(id: string, attrs: AttributeMap, _text: string | null): Ellipse {
     const ellipse = new Ellipse(
       id,
-      numericAttribute(attrs, 'cx'),
-      numericAttribute(attrs, 'cy'),
-      numericAttribute(attrs, 'rx'),
-      numericAttribute(attrs, 'ry'),
+      this.numericAttribute(attrs, 'cx'),
+      this.numericAttribute(attrs, 'cy'),
+      this.numericAttribute(attrs, 'rx'),
+      this.numericAttribute(attrs, 'ry'),
     );
     ellipse.loadCommonAttributes(attrs, GEOMETRY_ATTRIBUTES);
     return ellipse;
@@ -112,10 +110,10 @@ export class Ellipse extends Shape {
   }
 
   override writeGeometry(geometry: GeometryRecord): void {
-    this._cx = geometryNumber(geometry, 'cx');
-    this._cy = geometryNumber(geometry, 'cy');
-    this._rx = geometryNumber(geometry, 'rx');
-    this._ry = geometryNumber(geometry, 'ry');
+    this._cx = this.geometryNumber(geometry, 'cx');
+    this._cy = this.geometryNumber(geometry, 'cy');
+    this._rx = this.geometryNumber(geometry, 'rx');
+    this._ry = this.geometryNumber(geometry, 'ry');
   }
 
   override anchor(): { x: number; y: number } {
@@ -129,28 +127,28 @@ export class Ellipse extends Shape {
   override getAttribute(name: string): string | undefined {
     const common = super.getAttribute(name);
     if (common !== undefined) return common;
-    if (name === 'cx') return formatNumber(this._cx);
-    if (name === 'cy') return formatNumber(this._cy);
-    if (name === 'rx') return formatNumber(this._rx);
-    if (name === 'ry') return formatNumber(this._ry);
+    if (name === 'cx') return NumberFormat.format(this._cx);
+    if (name === 'cy') return NumberFormat.format(this._cy);
+    if (name === 'rx') return NumberFormat.format(this._rx);
+    if (name === 'ry') return NumberFormat.format(this._ry);
     return undefined;
   }
 
   override setAttribute(name: string, value: string): void {
     if (name === 'cx') {
-      this._cx = parseNumber(value, 'cx');
+      this._cx = NumberFormat.parse(value, 'cx');
       return;
     }
     if (name === 'cy') {
-      this._cy = parseNumber(value, 'cy');
+      this._cy = NumberFormat.parse(value, 'cy');
       return;
     }
     if (name === 'rx') {
-      this._rx = parseNumber(value, 'rx');
+      this._rx = NumberFormat.parse(value, 'rx');
       return;
     }
     if (name === 'ry') {
-      this._ry = parseNumber(value, 'ry');
+      this._ry = NumberFormat.parse(value, 'ry');
       return;
     }
     super.setAttribute(name, value);

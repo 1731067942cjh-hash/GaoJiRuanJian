@@ -1,13 +1,13 @@
 import { Container } from '../domain/Container';
 import type { Document } from '../domain/Document';
 import { DomainError } from '../domain/errors/DomainError';
-import { formatNumber } from '../domain/NumberFormat';
+import { NumberFormat } from '../domain/NumberFormat';
 import type { Shape } from '../domain/Shape';
-import { captureGeometry, restoreGeometry, validateGeometry, type GeometrySnapshot } from './GeometrySnapshot';
+import { GeometrySnapshot } from './GeometrySnapshot';
 import type { EditCommand } from './EditCommand';
 
 export class ScaleCommand implements EditCommand {
-  private before: GeometrySnapshot[] = [];
+  private before: GeometrySnapshot | null = null;
   private count = 0;
 
   constructor(
@@ -20,13 +20,10 @@ export class ScaleCommand implements EditCommand {
   }
 
   execute(_document: Document): string {
-    const targets =
-      this.shape instanceof Container ? this.shape.descendants() : [this.shape];
-    this.before = captureGeometry(targets);
-    this.count = targets.length;
-    this.shape.scaleBy(this.factor);
-    validateGeometry(this.before);
-    const factor = formatNumber(this.factor);
+    this.before = new GeometrySnapshot(this.shape);
+    this.count = this.before.size;
+    this.before.apply(() => this.shape.scaleBy(this.factor));
+    const factor = NumberFormat.format(this.factor);
     if (this.shape instanceof Container) {
       return `${this.shape.ref} scaled by ${factor} (${this.count} shapes)`;
     }
@@ -34,7 +31,7 @@ export class ScaleCommand implements EditCommand {
   }
 
   undo(_document: Document): string {
-    restoreGeometry(this.before);
+    this.before?.restore();
     if (this.shape instanceof Container) {
       return `${this.shape.ref} scaled back (${this.count} shapes)`;
     }

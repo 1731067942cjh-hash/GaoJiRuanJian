@@ -27,33 +27,33 @@ export class XmldomTree implements XmlTreeParser {
     if (root === null || root === undefined) {
       throw new XmlParseError('missing root element');
     }
-    return convert(root);
+    return this.convert(root);
   }
-}
 
-function convert(node: Element): XmlElement {
-  const attributes = new Map<string, string>();
-  for (let index = 0; index < node.attributes.length; index += 1) {
-    const attribute = node.attributes.item(index);
-    if (attribute !== null) {
-      attributes.set(attribute.name, attribute.value);
+  private convert(node: Element): XmlElement {
+    const attributes = new Map<string, string>();
+    for (let index = 0; index < node.attributes.length; index += 1) {
+      const attribute = node.attributes.item(index);
+      if (attribute !== null) {
+        attributes.set(attribute.name, attribute.value);
+      }
     }
-  }
 
-  const children: XmlElement[] = [];
-  let text = '';
-  for (let child = node.firstChild; child !== null; child = child.nextSibling) {
-    if (child.nodeType === 1) {
-      children.push(convert(child as Element));
-    } else if (child.nodeType === 3 || child.nodeType === 4) {
-      text += child.nodeValue ?? '';
+    const children: XmlElement[] = [];
+    let text = '';
+    for (let child = node.firstChild; child !== null; child = child.nextSibling) {
+      if (child.nodeType === 1) {
+        children.push(this.convert(child as Element));
+      } else if (child.nodeType === 3 || child.nodeType === 4) {
+        text += child.nodeValue ?? '';
+      }
     }
-  }
 
-  return {
-    tagName: node.localName ?? node.nodeName,
-    attributes,
-    text,
-    children,
-  };
+    return {
+      tagName: node.localName ?? node.nodeName,
+      attributes,
+      text,
+      children,
+    };
+  }
 }

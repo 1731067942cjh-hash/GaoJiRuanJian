@@ -23,8 +23,16 @@ export abstract class Container extends Shape {
     if (!Number.isInteger(index) || index < 0 || index > this._children.length) {
       throw new DomainError(`invalid child index: ${index}`);
     }
+    if (child.parent !== null) {
+      throw new DomainError(`shape already has a parent: ${child.id}`);
+    }
+    for (let ancestor: Container | null = this; ancestor !== null; ancestor = ancestor.parent) {
+      if (ancestor === child) {
+        throw new DomainError(`cannot add container into its own descendant: ${child.id}`);
+      }
+    }
     this._children.splice(index, 0, child);
-    child.parent = this;
+    Container.setParent(child, this);
   }
 
   removeChild(child: Shape): number {
@@ -33,7 +41,7 @@ export abstract class Container extends Shape {
       throw new DomainError(`${child.ref} is not a child of ${this.ref}`);
     }
     this._children.splice(index, 1);
-    child.parent = null;
+    Container.setParent(child, null);
     return index;
   }
 

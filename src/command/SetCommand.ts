@@ -1,7 +1,7 @@
 import type { Document } from '../domain/Document';
 import { DomainError } from '../domain/errors/DomainError';
 import type { Shape } from '../domain/Shape';
-import { setMessage } from './commandFormat';
+import { CommandFormat } from './CommandFormat';
 import type { EditCommand } from './EditCommand';
 
 export class SetCommand implements EditCommand {
@@ -21,7 +21,7 @@ export class SetCommand implements EditCommand {
     this.before = this.shape.getAttribute(this.attribute);
     this.captured = true;
     this.shape.setAttribute(this.attribute, this.value);
-    return setMessage(this.shape, this.attribute, this.value);
+    return CommandFormat.setMessage(this.shape, this.attribute, this.value);
   }
 
   undo(_document: Document): string {
@@ -33,6 +33,6 @@ export class SetCommand implements EditCommand {
       return `${this.shape.ref} updated: ${this.attribute} unset`;
     }
     this.shape.setAttribute(this.attribute, this.before);
-    return setMessage(this.shape, this.attribute, this.before);
+    return CommandFormat.setMessage(this.shape, this.attribute, this.before);
   }
 }

@@ -4,7 +4,7 @@ import type { Document } from '../domain/Document';
 import { Ellipse } from '../domain/Ellipse';
 import { Group } from '../domain/Group';
 import { Line } from '../domain/Line';
-import { formatNumber } from '../domain/NumberFormat';
+import { NumberFormat } from '../domain/NumberFormat';
 import { Rect } from '../domain/Rect';
 import type { Shape } from '../domain/Shape';
 import type { ShapeVisitor } from '../domain/ShapeVisitor';
@@ -30,7 +30,7 @@ export class TreeRenderer implements ShapeVisitor<NodeInfo> {
   render(document: Document): string[] {
     const entries: Entry[] = [];
     this.collect(document.children, '', entries);
-    const header = `svg (${formatNumber(document.width)}x${formatNumber(document.height)})`;
+    const header = `svg (${NumberFormat.format(document.width)}x${NumberFormat.format(document.height)})`;
     return [header, ...this.format(entries)];
   }
 
@@ -77,7 +77,7 @@ export class TreeRenderer implements ShapeVisitor<NodeInfo> {
   }
 
   visitDocument(document: Document): NodeInfo {
-    return { name: 'svg', details: `(${formatNumber(document.width)}x${formatNumber(document.height)})` };
+    return { name: 'svg', details: `(${NumberFormat.format(document.width)}x${NumberFormat.format(document.height)})` };
   }
 
   visitGroup(group: Group): NodeInfo {
@@ -86,10 +86,10 @@ export class TreeRenderer implements ShapeVisitor<NodeInfo> {
 
   visitRect(rect: Rect): NodeInfo {
     const parts = [
-      `x=${formatNumber(rect.x)}`,
-      `y=${formatNumber(rect.y)}`,
-      `w=${formatNumber(rect.width)}`,
-      `h=${formatNumber(rect.height)}`,
+      `x=${NumberFormat.format(rect.x)}`,
+      `y=${NumberFormat.format(rect.y)}`,
+      `w=${NumberFormat.format(rect.width)}`,
+      `h=${NumberFormat.format(rect.height)}`,
       ...this.style(rect),
     ];
     return { name: rect.ref, details: parts.join(' ') };
@@ -97,9 +97,9 @@ export class TreeRenderer implements ShapeVisitor<NodeInfo> {
 
   visitCircle(circle: Circle): NodeInfo {
     const parts = [
-      `cx=${formatNumber(circle.cx)}`,
-      `cy=${formatNumber(circle.cy)}`,
-      `r=${formatNumber(circle.r)}`,
+      `cx=${NumberFormat.format(circle.cx)}`,
+      `cy=${NumberFormat.format(circle.cy)}`,
+      `r=${NumberFormat.format(circle.r)}`,
       ...this.style(circle),
     ];
     return { name: circle.ref, details: parts.join(' ') };
@@ -107,10 +107,10 @@ export class TreeRenderer implements ShapeVisitor<NodeInfo> {
 
   visitEllipse(ellipse: Ellipse): NodeInfo {
     const parts = [
-      `cx=${formatNumber(ellipse.cx)}`,
-      `cy=${formatNumber(ellipse.cy)}`,
-      `rx=${formatNumber(ellipse.rx)}`,
-      `ry=${formatNumber(ellipse.ry)}`,
+      `cx=${NumberFormat.format(ellipse.cx)}`,
+      `cy=${NumberFormat.format(ellipse.cy)}`,
+      `rx=${NumberFormat.format(ellipse.rx)}`,
+      `ry=${NumberFormat.format(ellipse.ry)}`,
       ...this.style(ellipse),
     ];
     return { name: ellipse.ref, details: parts.join(' ') };
@@ -118,7 +118,7 @@ export class TreeRenderer implements ShapeVisitor<NodeInfo> {
 
   visitLine(line: Line): NodeInfo {
     const parts = [
-      `(${formatNumber(line.x1)},${formatNumber(line.y1)}) -> (${formatNumber(line.x2)},${formatNumber(line.y2)})`,
+      `(${NumberFormat.format(line.x1)},${NumberFormat.format(line.y1)}) -> (${NumberFormat.format(line.x2)},${NumberFormat.format(line.y2)})`,
       ...this.style(line),
     ];
     return { name: line.ref, details: parts.join(' ') };
@@ -126,7 +126,7 @@ export class TreeRenderer implements ShapeVisitor<NodeInfo> {
 
   visitText(text: TextShape): NodeInfo {
     const parts = [
-      `(${formatNumber(text.x)},${formatNumber(text.y)})`,
+      `(${NumberFormat.format(text.x)},${NumberFormat.format(text.y)})`,
       JSON.stringify(text.content),
       ...this.style(text),
     ];

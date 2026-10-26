@@ -2,7 +2,7 @@ import type { Container } from '../domain/Container';
 import type { Document } from '../domain/Document';
 import { DomainError } from '../domain/errors/DomainError';
 import type { Shape } from '../domain/Shape';
-import { containerLabel } from './commandFormat';
+import { CommandFormat } from './CommandFormat';
 import type { EditCommand } from './EditCommand';
 
 export class DeleteCommand implements EditCommand {
@@ -27,6 +27,6 @@ export class DeleteCommand implements EditCommand {
       throw new DomainError(`no such shape: ${this.shape.id}`);
     }
     this.parent.insertChild(this.shape, this.index);
-    return `${this.shape.ref} restored into ${containerLabel(this.parent)}`;
+    return `${this.shape.ref} restored into ${CommandFormat.containerLabel(this.parent)}`;
   }
 }

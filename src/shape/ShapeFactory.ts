@@ -17,7 +17,7 @@ import { TextShape } from '../domain/TextShape';
 export class ShapeFactory {
   private readonly kinds = new Map<string, ShapeKind>();
 
-  constructor(kinds: readonly ShapeKind[] = defaultKinds()) {
+  constructor(kinds: readonly ShapeKind[] = [Rect, Circle, Ellipse, Line, TextShape, Group]) {
     for (const kind of kinds) {
       this.kinds.set(kind.type, kind);
     }
@@ -52,8 +52,4 @@ export class ShapeFactory {
     }
     return kind.fromAttributes(id, attrs, text);
   }
-}
-
-function defaultKinds(): ShapeKind[] {
-  return [Rect, Circle, Ellipse, Line, TextShape, Group];
 }

@@ -36,7 +36,7 @@ export class SvgReader {
     }
     this.collectIds(root, explicitIds);
     const allocator = new IdAllocator(explicitIds);
-    const size = readCanvasSize(root);
+    const size = this.readCanvasSize(root);
     const document = new Document(size.width, size.height);
     const warnings: string[] = [];
 
@@ -117,30 +117,30 @@ export class SvgReader {
 
     return shape;
   }
-}
 
-function readCanvasSize(root: XmlElement): { width: number; height: number } {
-  const viewBox = parseViewBox(root.attributes.get('viewBox'));
-  const width = parseLength(root.attributes.get('width')) ?? viewBox?.width ?? 800;
-  const height = parseLength(root.attributes.get('height')) ?? viewBox?.height ?? 600;
-  return { width, height };
-}
-
-function parseViewBox(value: string | undefined): { width: number; height: number } | null {
-  if (value === undefined) return null;
-  const parts = value.split(/[\s,]+/).filter((part) => part.length > 0);
-  if (parts.length !== 4) return null;
-  const width = Number(parts[2]);
-  const height = Number(parts[3]);
-  if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
-    return null;
+  private readCanvasSize(root: XmlElement): { width: number; height: number } {
+    const viewBox = this.parseViewBox(root.attributes.get('viewBox'));
+    const width = this.parseLength(root.attributes.get('width')) ?? viewBox?.width ?? 800;
+    const height = this.parseLength(root.attributes.get('height')) ?? viewBox?.height ?? 600;
+    return { width, height };
   }
-  return { width, height };
-}
 
-function parseLength(value: string | undefined): number | null {
-  if (value === undefined) return null;
-  const parsed = Number.parseFloat(value);
-  if (!Number.isFinite(parsed) || parsed <= 0) return null;
-  return parsed;
+  private parseViewBox(value: string | undefined): { width: number; height: number } | null {
+    if (value === undefined) return null;
+    const parts = value.split(/[\s,]+/).filter((part) => part.length > 0);
+    if (parts.length !== 4) return null;
+    const width = Number(parts[2]);
+    const height = Number(parts[3]);
+    if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
+      return null;
+    }
+    return { width, height };
+  }
+
+  private parseLength(value: string | undefined): number | null {
+    if (value === undefined) return null;
+    const parsed = Number.parseFloat(value);
+    if (!Number.isFinite(parsed) || parsed <= 0) return null;
+    return parsed;
+  }
 }

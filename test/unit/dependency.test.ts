@@ -2,6 +2,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import ts from 'typescript';
 
 const projectRoot = fileURLToPath(new URL('../..', import.meta.url));
 const sourceRoot = join(projectRoot, 'src');
@@ -104,5 +105,35 @@ describe('dependency direction', () => {
       }
     }
     expect(violations).toEqual([]);
+  });
+
+  it('keeps production behaviour in classes and mutable fields encapsulated', () => {
+    const violations: string[] = [];
+    for (const file of files) {
+      const source = ts.createSourceFile(file, readFileSync(file, 'utf8'), ts.ScriptTarget.Latest, true);
+      for (const statement of source.statements) {
+        if (ts.isFunctionDeclaration(statement)) {
+          violations.push(`${relative(projectRoot, file)}: top-level function ${statement.name?.text}`);
+        }
+        if (!ts.isClassDeclaration(statement)) continue;
+        for (const member of statement.members) {
+          if (!ts.isPropertyDeclaration(member)) continue;
+          const modifiers = ts.getModifiers(member) ?? [];
+          if (!modifiers.some(modifier => [
+            ts.SyntaxKind.PrivateKeyword, ts.SyntaxKind.ProtectedKeyword, ts.SyntaxKind.ReadonlyKeyword,
+          ].includes(modifier.kind))) {
+            violations.push(`${relative(projectRoot, file)}: mutable public field ${member.name.getText(source)}`);
+          }
+        }
+      }
+    }
+    expect(violations).toEqual([]);
+  });
+
+  it('isolates third-party XML imports to the adapter', () => {
+    for (const file of files.filter(entry => moduleOf(entry) === 'serialization')) {
+      if (file.endsWith(`${sep}XmldomTree.ts`)) continue;
+      expect(importedModules(file), relative(projectRoot, file)).not.toContain('external');
+    }
   });
 });
