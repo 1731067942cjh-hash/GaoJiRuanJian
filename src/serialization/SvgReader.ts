@@ -98,7 +98,7 @@ export class SvgReader {
       tag,
       id,
       element.attributes,
-      tag === 'text' ? element.text.trim() : null,
+      element.text,
     );
 
     if (shape instanceof Container) {

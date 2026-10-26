@@ -1,4 +1,3 @@
-import { DomainError } from '../domain/errors/DomainError';
 import { CommandParser } from './CommandParser';
 import type { CommandRegistry } from './CommandRegistry';
 import type { EditorSession } from './EditorSession';
@@ -20,10 +19,8 @@ export class CommandDispatcher {
       }
       return await this.registry.run(this.session, parsed.name, parsed.args);
     } catch (error) {
-      if (error instanceof DomainError) {
-        return [`error: ${error.message}`];
-      }
-      return [`error: ${error instanceof Error ? error.message : String(error)}`];
+      const message = error instanceof Error ? error.message : String(error);
+      return [`error: ${message.replace(/\r/g, '\\r').replace(/\n/g, '\\n')}`];
     }
   }
 }

@@ -108,8 +108,8 @@ describe('attributes', () => {
 });
 
 describe('formatting and ids', () => {
-  it('formats numbers without floating point noise', () => {
-    expect(formatNumber(0.1 + 0.2)).toBe('0.3');
+  it('formats numbers without losing their stored precision', () => {
+    expect(Number(formatNumber(0.1 + 0.2))).toBe(0.1 + 0.2);
     expect(formatNumber(130)).toBe('130');
     expect(formatNumber(-0)).toBe('0');
     expect(formatNumber(1.5)).toBe('1.5');

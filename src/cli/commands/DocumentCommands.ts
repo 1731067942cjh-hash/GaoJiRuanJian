@@ -11,10 +11,7 @@ export function registerDocumentCommands(commands: CommandMap): void {
     requiresDocument: false,
     run: (session, args) => {
       requireArgumentCount(args, 0, 2, 'init [w] [h]');
-      if (args.length === 1) {
-        throw new DomainError('usage: init [w] [h]');
-      }
-      const width = args.length === 2 ? parseNumber(args[0], 'width') : 800;
+      const width = args.length >= 1 ? parseNumber(args[0], 'width') : 800;
       const height = args.length === 2 ? parseNumber(args[1], 'height') : 600;
       const document = new Document(width, height);
       session.document = document;

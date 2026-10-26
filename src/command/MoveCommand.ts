@@ -2,7 +2,7 @@ import { Container } from '../domain/Container';
 import type { Document } from '../domain/Document';
 import { formatNumber } from '../domain/NumberFormat';
 import type { Shape } from '../domain/Shape';
-import { captureGeometry, restoreGeometry, type GeometrySnapshot } from './GeometrySnapshot';
+import { captureGeometry, restoreGeometry, validateGeometry, type GeometrySnapshot } from './GeometrySnapshot';
 import type { EditCommand } from './EditCommand';
 
 export class MoveCommand implements EditCommand {
@@ -19,6 +19,7 @@ export class MoveCommand implements EditCommand {
       this.shape instanceof Container ? this.shape.descendants() : [this.shape];
     this.before = captureGeometry(targets);
     this.shape.moveBy(this.dx, this.dy);
+    validateGeometry(this.before);
 
     if (this.shape instanceof Container) {
       return `${this.shape.ref} moved by (${formatNumber(this.dx)},${formatNumber(this.dy)})`;

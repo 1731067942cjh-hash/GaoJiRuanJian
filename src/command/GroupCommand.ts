@@ -23,7 +23,7 @@ export class GroupCommand implements EditCommand {
   ) {}
 
   execute(document: Document): string {
-    if (this.newId === 'svg' || document.find(this.newId) !== undefined) {
+    if (document.find(this.newId) !== undefined) {
       throw new DomainError(`id already exists: ${this.newId}`);
     }
     if (this.targets.length < 2) {
@@ -53,7 +53,10 @@ export class GroupCommand implements EditCommand {
       }
     }
 
-    const first = this.targets[0];
+    // Preserve the document's existing drawing order, not argument order.
+    const ordered = document.allShapes().filter((shape) => targetSet.has(shape));
+    const group = new Group(this.newId); // Validate the id before any mutation.
+    const first = ordered[0];
     const parent = first.parent;
     if (parent === null) {
       throw new DomainError(`no such shape: ${first.id}`);
@@ -71,13 +74,12 @@ export class GroupCommand implements EditCommand {
       return { shape, parent: owner, index: owner.indexOfChild(shape) };
     });
 
-    for (const target of this.targets) {
+    for (const target of ordered) {
       target.parent?.removeChild(target);
     }
 
-    const group = new Group(this.newId);
     parent.insertChild(group, this.insertionIndex);
-    for (const target of this.targets) {
+    for (const target of ordered) {
       group.appendChild(target);
     }
     this.group = group;

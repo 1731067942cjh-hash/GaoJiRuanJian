@@ -122,12 +122,12 @@ describe('group / ungroup / addto / reorder', () => {
     return { document, a, b };
   }
 
-  it('groups shapes in command order and restores their positions', () => {
+  it('groups shapes in document order and restores their positions', () => {
     const { document, a, b } = twoRects();
     const command = new GroupCommand('g1', [b, a]);
     expect(command.execute(document)).toBe('g#g1 created with 2 children');
     const group = document.find('g1') as Group;
-    expect(group.children.map((shape) => shape.id)).toEqual(['b', 'a']);
+    expect(group.children.map((shape) => shape.id)).toEqual(['a', 'b']);
     expect(document.children.map((shape) => shape.id)).toEqual(['g1']);
 
     expect(command.undo(document)).toBe('g#g1 removed, 2 children restored');

@@ -11,7 +11,7 @@ export class CreateCommand implements EditCommand {
   ) {}
 
   execute(document: Document): string {
-    if (this.shape.id === 'svg' || document.find(this.shape.id) !== undefined) {
+    if (document.find(this.shape.id) !== undefined) {
       throw new DomainError(`id already exists: ${this.shape.id}`);
     }
     this.parent.appendChild(this.shape);

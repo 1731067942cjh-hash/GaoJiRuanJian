@@ -3,7 +3,7 @@ import type { Document } from '../domain/Document';
 import { DomainError } from '../domain/errors/DomainError';
 import { formatNumber } from '../domain/NumberFormat';
 import type { Shape } from '../domain/Shape';
-import { captureGeometry, restoreGeometry, type GeometrySnapshot } from './GeometrySnapshot';
+import { captureGeometry, restoreGeometry, validateGeometry, type GeometrySnapshot } from './GeometrySnapshot';
 import type { EditCommand } from './EditCommand';
 
 export class ScaleCommand implements EditCommand {
@@ -25,6 +25,7 @@ export class ScaleCommand implements EditCommand {
     this.before = captureGeometry(targets);
     this.count = targets.length;
     this.shape.scaleBy(this.factor);
+    validateGeometry(this.before);
     const factor = formatNumber(this.factor);
     if (this.shape instanceof Container) {
       return `${this.shape.ref} scaled by ${factor} (${this.count} shapes)`;

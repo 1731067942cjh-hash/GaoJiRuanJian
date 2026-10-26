@@ -39,6 +39,9 @@ export abstract class Shape {
   private readonly _extras = new Map<string, string>();
 
   protected constructor(id: string) {
+    if (id.length === 0 || /\s/.test(id)) {
+      throw new DomainError('id must be non-empty and contain no whitespace');
+    }
     this.id = id;
   }
 

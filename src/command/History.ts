@@ -24,11 +24,12 @@ export class History {
       // The spec uses this exact message for the undo/redo lock.
       throw new DomainError('undo not allowed after io command');
     }
-    const command = this.undoStack.pop();
+    const command = this.undoStack.at(-1);
     if (command === undefined) {
       throw new DomainError('nothing to undo');
     }
     const message = command.undo(document);
+    this.undoStack.pop();
     this.redoStack.push(command);
     return message;
   }
@@ -37,11 +38,12 @@ export class History {
     if (this.locked) {
       throw new DomainError('undo not allowed after io command');
     }
-    const command = this.redoStack.pop();
+    const command = this.redoStack.at(-1);
     if (command === undefined) {
       throw new DomainError('nothing to redo');
     }
     const message = command.execute(document);
+    this.redoStack.pop();
     this.undoStack.push(command);
     return message;
   }
