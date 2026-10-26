@@ -17,9 +17,10 @@ component "domain\nShape · Container · Document\n六种图形 · Transform · 
 
 cli --> cmd
 cli --> view
+cli --> shape
+cli --> domain
 cli --> ser
 cli --> io
-cmd --> shape
 cmd --> domain
 shape --> domain
 ser --> shape

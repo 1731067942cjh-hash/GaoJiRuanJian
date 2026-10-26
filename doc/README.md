@@ -18,7 +18,7 @@ src/
 │   ├── ShapeVisitor.ts     访问者接口（tree / show / SVG 写出共用）
 │   ├── Transform.ts        仿射矩阵解析与乘法（read 时烘焙坐标）
 │   ├── IdAllocator.ts      外部 SVG 缺 id 时按 <tag><n> 分配
-│   ├── NumberFormat.ts     数字解析与格式化（去浮点噪声）
+│   ├── NumberFormat.ts     数字解析与无损格式化（保留 JavaScript 数值精度）
 │   └── errors/DomainError.ts
 ├── shape/
 │   └── ShapeFactory.ts     类型名/tag → 类（允许的名字分派 #2）
@@ -26,8 +26,8 @@ src/
 │   ├── EditCommand.ts      命令接口：execute / undo
 │   ├── History.ts          undo/redo 双栈、io 锁、redo 清空
 │   ├── Create/Delete/Move/Scale/Set/Group/Ungroup/AddTo/ReorderCommand.ts
-│   ├── GeometrySnapshot.ts 记录受影响图形的绝对几何，供撤销还原
-│   └── commandFormat.ts    统一回显文案（容器标签、set 文案）
+│   ├── GeometrySnapshot.ts 封装子树绝对几何；撤销与数值溢出回滚
+│   └── CommandFormat.ts    统一回显文案（容器标签、set 文案）
 ├── serialization/
 │   ├── SvgReader.ts        SVG → Document；补 id、transform 烘焙、警告
 │   ├── SvgWriter.ts        Document → SVG（Visitor）
@@ -46,10 +46,11 @@ src/
     ├── CommandParser.ts    命令名 + 参数
     ├── CommandRegistry.ts  命令名 → handler（允许的名字分派 #1）
     ├── CommandDispatcher.ts 统一错误捕获与输出
-    ├── EditorSession.ts    当前文档、路径、History、依赖注入
+    ├── EditorSession.ts    封装文档生命周期、路径和 History，成功后才提交状态
     ├── Repl.ts             逐行读入；TTY 才显示 banner/prompt
     ├── main.ts             组合根
-    └── commands/           文档类、编辑类、显示类 handler（按职责拆分）
+    └── commands/           DocumentCommands / EditCommands / ViewCommands 注册类
+        └── CommandArguments.ts 参数数量校验类
 ```
 
 | 模块 | 职责 | 不应该做的事 |
@@ -75,7 +76,8 @@ src/
 | **Factory + Registry** | `src/shape/ShapeFactory.ts` | 一张 “类型名/tag → 类” 表同时服务 `create` 与 `read`；未知类型给出 `unknown shape type: … (is the plugin loaded?)`。 |
 | **Visitor** | `view/`、`serialization/SvgWriter.ts` | 每个具体图形实现 `accept(visitor)`；tree、show、SVG 写出是三个访问者，领域模型不 import 任何渲染器。 |
 | **Adapter** | `io/NodeFileGateway.ts`、`serialization/XmldomTree.ts` | 把 `node:fs/promises` 与 `@xmldom/xmldom` 藏在小端口后面；测试可替换，库更换只改适配器。 |
-| **Facade（轻量）** | `cli/CommandDispatcher.ts` | 统一“解析 → 执行 → 错误 → 输出”流程；不承载领域规则。 |
+| **Facade（轻量）** | `cli/CommandDispatcher.ts`、`EditorSession.ts` | Dispatcher 统一解析与错误输出；Session 封装文档生命周期、路径和历史，调用者不能直接赋值。 |
+| **Memento** | `command/GeometrySnapshot.ts` | 私有快照记录完整子树几何；撤销精确还原，move/scale 发生异常或溢出则整体回滚。 |
 | **Template Method（基类复用）** | `Shape.loadCommonAttributes` | 公共样式与未知属性的保留逻辑只写一次；子类只处理自己的几何。 |
 
 **允许的两处“按名字分派”（也是唯一两处）：**
@@ -99,7 +101,7 @@ src/
 | `io` | `io` + `node:fs` | 文件端口不依赖模型 |
 | `cli` | 以上全部 + `node:readline` | 组合根与适配层 |
 
-**硬规则：** 不允许反向依赖；不允许循环；`domain` 不得 import 任何 UI/IO/序列化代码。  
+**硬规则：** 不允许反向依赖；不允许模块层级循环（同层接口的 type-only 引用允许）；`domain` 不得 import 任何 UI/IO/序列化代码。
 **执行手段：** `test/unit/dependency.test.ts` 静态扫描 `src/**` 的 import，按上表断言；`npm test` 每次运行。当前无违规。
 
 ### 1.4 变化点假设
@@ -109,7 +111,7 @@ src/
 | 1 | 新增图形类型（`box`、`path`、插件） | 工厂注册表 + `ShapeKind` 元数据；容器已支持任意子树；`read` 与 `create` 共用工厂 | 不在本阶段实现动态插件加载；接缝已在，标注 TODO |
 | 2 | `set` 属性白名单/传播语义 | 每个类多态实现 `supportsAttribute`/`getAttribute`/`setAttribute`；新增属性只改一个类 | `box` 的 fill/label 传播属于插件阶段 |
 | 3 | SVG 方言（样式、命名空间、transform） | 读写器独立；XML 库藏在 `XmlTree` 后；未建模属性进 `extras` 原样保留 | 不提前支持 CSS/gradient/path 等完整 SVG |
-| 4 | 寻址方式（id → 结构路径） | `Document.find` 是唯一查找入口，便于替换 | 规格明确要求 id 寻址，不额外造 Locator 抽象 |
+| 4 | 寻址方式（id → 结构路径） | `Document.find` 是模型查找入口，`EditorSession.resolveShape/resolveGroup` 统一 CLI 错误，便于替换 | 规格明确要求 id 寻址，不额外造 Locator 抽象 |
 | 5 | 撤销策略（逆操作 → 快照/协同） | 命令接口隔离；`History` 可整体替换；几何用绝对快照避免累积误差 | 不引入事件溯源/CRDT |
 | 6 | IO 来源/目标（浏览器、远端） | `FileGateway` 端口 | 本阶段只做本地文件 |
 | 7 | 显示格式与本地化 | 渲染器在 `view/`，文案集中 | 不引入 i18n 框架 |
@@ -126,11 +128,11 @@ src/
 | `tree` 对齐 | 属性列 = 渲染子树中 `(缩进 + 名称)` 最大长度 + 2。§5.1、§6 示例精确复现（列 19）；§6.1 示例自身列宽不一致（29 与 31），本实现统一为 32，内容正确，差异记录在修订记录。 |
 | 文档 IO 与历史 | `init/read/save/canvas 改尺寸` 成功后清空 undo/redo 并上锁；下一次编辑命令解锁；显示类不触碰历史。失败的 IO 不改变状态、不锁历史。 |
 | undo/redo 锁文案 | 按规格字面，两个方向都输出 `error: undo not allowed after io command`。 |
-| 数字 | 最多 6 位小数、去尾零、`-0` 归一为 `0`；避免 `0.1+0.2` 噪声。 |
+| 数字 | `NumberFormat` 使用可往返的最短字符串；保留存储精度（如 `1e-10` 和 `1e30`），`-0` 输出为 `0`；可能显示正常的浮点运算尾差，不通过舍入改变数据。空数字与非有限值拒绝，move/scale 溢出整体回滚。 |
 | 未知 SVG 元素 | 警告并跳过（如 `<path>`）；未建模属性保存在 `extras` 并写回。 |
 | `read` 重复 id | 视为非法输入：`error: duplicate id: <id>`，当前文档不变。 |
 | `save` 无路径 | 优先用最后一次 `read` 的路径；若从未 read，则回退到最后一次保存路径；两者都没有时：`error: no file path. use 'save <file.svg>'`（规格外扩展）。 |
-| `group` 插入位置 | 新容器放在第一个被收编图形原来的位置；跨父容器时归第一个目标所在父级。 |
+| `group` 插入位置 | 先按编辑前的文档遍历顺序排序，保持各目标原有相对顺序；新容器放在排序后第一个目标的位置，并使用其父级。跨父节点的全局顺序采用文档前序遍历。 |
 | `ungroup` 根级 | 按规格拒绝；只允许解组嵌套容器。 |
 | 非 TTY 输出 | 提示符与 banner 只在 TTY 显示；管道/脚本输出纯净，便于 golden 对比。交互式 PTY 已验证显示 `svg>`。 |
 | `scale` 文本 | 缩放 x/y（几何）；不缩放 `font-size`（样式）。`read` 的 transform 烘焙会按比例缩放 `font-size` extra。 |
@@ -140,7 +142,7 @@ src/
 
 ## 过程记录
 
-以下记录开发过程中真实出现的判断、AI 建议、验证与纠正，按发生顺序排列。
+第 1–10 项保留已有工程的 2026-10-19 开发记录；第 11–15 项是 2026-10-26 本轮实际复查、失败复现与修正记录。早期测试数量表示当时结果，最终验收结果见后文。
 
 ### 1. 规格的 `tree` 列宽自相矛盾
 
@@ -205,13 +207,47 @@ src/
 - **处理**：生成 ed25519 密钥；用户把公钥加入 GitHub 后，`ssh -T git@github.com` 返回 `Hi 1731067942cjh-hash!`，`git ls-remote` 为空仓库、退出码 0。
 - **验证**：首个提交推送成功，`main` 跟踪 `origin/main`；最终以 `final` tag 推送。
 
+### 11. 已有测试通过，不代表完全符合文字规格
+
+- **基线**：开始复查时，已有 89 项测试通过，远程 `main` 和 `final` 指向同一旧提交 `2303b82`。
+- **发现**：`GroupCommand` 按命令参数顺序加入子节点，旧测试也要求 `[b,a]`，与规格“保持相对顺序”冲突；因此不能只信旧测试。
+- **验证**：新增 `spec-regressions.test.ts`，先执行并确认 11 个回归用例全部失败，再提交测试，形成真实的“复现 → 修复”历史。
+- **处理**：按原文档顺序分组，并测试反向参数、跨父节点与 undo/redo。修正旧测试的错误期望。
+
+### 12. 原子性、内容和精度的修复
+
+- **发现**：`read` 的 `.trim()` 丢失文本两端空格；六位小数格式化让 `set → undo` 和 `save → read` 丢失精度，大指数还可能错误输出；`move/scale` 溢出后会污染模型。
+- **处理**：保留文本原值，数字使用最短可往返表示；几何快照检测整个子树，发生异常或非有限值时整体还原；History 只在 undo/redo 成功后出栈。
+- **补充**：`init 320` 使用默认高度 600；不再无依据保留用户 id `svg`；拒绝空 id、空数字；错误消息中的换行转义，保证一行一条。
+- **验证**：包含错误分组后 redo 仍可用、溢出后撤销仍指向上次成功命令，以及精度与文本读写往返。
+
+### 13. 对面向对象范式的二次自查
+
+- **发现**：旧 `EditorSession` 暴露可赋值的 document/path，多个生产文件只导出自由函数；原“类名=文件名”检查会跳过没有类的文件，因此检查不足。
+- **处理**：Session 管理 init/read/save/resize/execute/undo/redo，状态改为私有；Shape 父指针只读，Container 维护归属并防止双重父级和循环；GeometrySnapshot 封装快照与回滚。数字、提示文案、REPL、注册器、XML 私有算法均归属对应类。
+- **边界**：`XmlElement`、`Matrix` 等只读接口是适配器数据或数值，不是图形领域模型；真正的图形状态与行为仍在 Shape 类层次中。注册回调是命令分派接缝，不是另一套业务过程模型。
+- **验证**：新增 AST 检查，禁止生产代码顶层函数声明与公开可变字段；继续检查一类一文件、依赖方向，并限制 XML 外部依赖只能出现在适配器。
+
+### 14. 运行环境与交付复查
+
+- **发现**：README 宣称 Node >=20，但已锁定的 Vitest 5.0.5 要求 `^22.12.0 || ^24.0.0 || >=26.0.0`。
+- **处理**：同步 package.json / package-lock.json engines 和 README，新增 `.nvmrc` 记录实测 26.8.2。CLI 使用 tsx，工程采用 `tsc --noEmit`，没有额外 build 脚本。
+- **版本管理**：保留原有逐步开发历史，本轮按回归测试、行为修复、面向对象重构、验收文档分步提交；旧 final 保存在 `archive/final-2026-10-19`，最终 `final` 指向本轮验收提交。
+- **截止时间**：任务文档没有提供具体截止日期，不能从已有文件推断，标签时间使用真实提交时间，不回填日期。
+
+### 15. 最后一次交互实测发现 Ctrl+D 退出崩溃
+
+- **现象**：通过 PTY 连续粘贴六行命令后立即发送 Ctrl+D，readline 已关闭，REPL 仍在异步命令返回后调用 prompt，抛出 `ERR_USE_AFTER_CLOSE`，进程退出码 1。
+- **处理**：监听 close 事件，只在输入接口仍打开时打印下一条提示符；继续处理已经排队的命令。
+- **验证**：增加模拟 TTY 与 Ctrl+D 的真实 Dispatcher/Session 测试，确认排队命令执行完毕、几何撤销正确、无异常；再次用 PTY 复查正常退出。
+
 ---
 
 ## 一致性自查
 
 ### 1. 模块划分：实际目录与方案是否一致？
 
-**结论：总体一致；有 5 处计划期的结构被调整，均已记入修订记录。**
+**结论：总体一致；计划期与本轮复查的结构调整均已记入修订记录。**
 
 实际模块与关键类型：
 
@@ -219,7 +255,7 @@ src/
 |---|---|
 | `src/domain` | `Shape`、`Container`、`Document`、六个具体图形、`ShapeVisitor`、`Transform`、`IdAllocator`、`NumberFormat`、`DomainError` |
 | `src/shape` | `ShapeFactory` |
-| `src/command` | `EditCommand`、`History`、9 个命令类、`GeometrySnapshot`、`commandFormat` |
+| `src/command` | `EditCommand`、`History`、9 个命令类、`GeometrySnapshot`、`CommandFormat` |
 | `src/serialization` | `SvgReader`、`SvgWriter`、`XmlTree` 端口、`XmldomTree` 适配器、`XmlParseError` |
 | `src/view` | `TreeRenderer`、`ShowRenderer`、`HelpText` |
 | `src/io` | `FileGateway`、`NodeFileGateway` |
@@ -233,7 +269,9 @@ src/
 | `src/shape/ShapeSpec.ts` | 未创建 | 参数 schema 放进 `ShapeKind` 接口与各图形的静态元数据，减少一层无行为对象 |
 | `src/serialization/FastXmlTree.ts` | `XmldomTree.ts` + `XmlParseError.ts` | 改用 `@xmldom/xmldom`；按“一类一文件”把错误类拆出 |
 | `scripts/replay.mjs`（可选） | 未创建 | 由 `test/integration/transcripts.test.ts` 直接回放真实 CLI，更接近验收 |
-| `src/command` 只有命令类 | 增加 `GeometrySnapshot.ts`、`commandFormat.ts` | 撤销快照与回显文案是横切关注点，抽成无状态辅助模块而非塞进命令基类 |
+| `src/command` 只有命令类 | 增加 `GeometrySnapshot.ts`、`CommandFormat.ts` | 撤销快照与回显文案是横切关注点，由 GeometrySnapshot 对象封装快照与回滚、CommandFormat 类封装文案，不再导出过程式自由函数 |
+
+本轮还将 `cli/commands/helpers.ts` 移除：模型查找归入 EditorSession，语法数量检查归入 CommandArguments；Repl、三个命令注册模块和 NumberFormat 均改为同名类。
 
 另外，计划中的 `test/`、`doc/`、`examples/`、`scripts/` 均按计划落地；`doc/README.md` 即本文件。
 
@@ -265,21 +303,23 @@ src/
 ### 1. 自动化检查
 
 - **严格类型**：`npm run typecheck`（`strict`、`noUnusedLocals`、`noUnusedParameters`、`noImplicitOverride`）。
-- **测试**：`npm test`，7 个测试文件、**89 个用例**，覆盖领域、命令、序列化、视图、解析、依赖规则与真实 CLI 集成。
+- **测试**：`npm test`，9 个测试文件、**104 个用例**，覆盖领域、命令、序列化、视图、解析、依赖规则与真实 CLI 集成。
+- **本轮环境复验**：Node v26.8.2 / npm 11.19.1，重新执行 `npm ci --no-audit --no-fund` 成功后完成以下检查；`npm run diagram` 重新生成架构 SVG，并渲染 PNG 检查布局可读。
 - **一键验证**：`npm run verify`（typecheck + test）；最终运行结果：
 
 ```text
-Test Files  7 passed (7)
-Tests       89 passed (89)
+Test Files  9 passed (9)
+Tests       104 passed (104)
 ```
 
-- **架构测试**：`test/unit/dependency.test.ts` 同时检查依赖方向与“一类一文件、文件名=类名”。
+- **架构测试**：`test/unit/dependency.test.ts` 同时检查依赖方向、“一类一文件、文件名=类名”、生产行为归属类、公开可变字段和 XML 库隔离。
 
 ### 2. 规格级回归
 
 | 手段 | 内容 |
 |---|---|
 | golden transcript | §6 完整会话、§6.1 流程图会话、错误矩阵、undo/redo 历史，逐行比对真实子进程输出 |
+| 本轮回归 | 分组原顺序、跨父归属还原、空 id/空数字、文本空白、数值精度、溢出回滚、失败不清 redo、单行错误、init 可选宽度 |
 | round-trip | `read other.svg → save → read`，结构一致、无二次警告、XML 可再解析 |
 | 错误矩阵 | id 已存在/不存在、容器缺失/非容器、未知类型/属性、scale 非正、根级 ungroup、group 成环、addto 成环、文件读/写失败、无文档、io 后 undo |
 | 交互验证 | 用 `script` 分配 PTY，确认 banner、`svg>`、命令回显和结果；管道模式确认输出纯净 |
@@ -316,6 +356,10 @@ Tests       89 passed (89)
 
 | 日期 | 修订 | 原因 |
 |---|---|---|
+| 2026-10-26 | 修复交互式粘贴命令后 Ctrl+D 崩溃 | PTY 实测暴露异步完成后对已关闭 readline 调用 prompt，加入退出回归 |
+| 2026-10-26 | 修复分组顺序、文本与数值往返、失败原子性、可选 init 宽度、合法 id 和错误换行 | 对照规格复现 11 项失败后修正 |
+| 2026-10-26 | Session/Composite 状态封装；快照、注册器、REPL 与工具行为归入类 | 严格落实面向对象要求，新增 AST 与容器不变量检查 |
+| 2026-10-26 | 同步 Node 版本要求，补充本轮真实过程与验收结果 | 使安装说明、代码、测试和架构方案一致 |
 | 2026-10-19 | 初版架构方案与模块划分 | 依据 `PLAN.md` 与规格确定分层 |
 | 2026-10-19 | XML 适配器由计划的 `fast-xml-parser` 改为 `@xmldom/xmldom`，新增 `XmlTree` 端口 | 保留顺序/属性/文本更直接；隔离第三方库 |
 | 2026-10-19 | 拆分 `XmlParseError.ts` | 满足“一类一文件、文件名=类名”的自检规则 |

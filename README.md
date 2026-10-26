@@ -4,7 +4,9 @@ Lab1 Phase 1：一个用 TypeScript 实现的 SVG 编辑器（CLI）。支持六
 
 ## 快速开始
 
-要求：Node.js >= 20（开发与验证使用 v26.8.2）。
+要求：Node.js 22.12+（22.x）、24.x 或 26+；推荐本次实测的 **v26.8.2**。这是测试工具 Vitest 5 的运行要求，不能用旧版 Node 20 跑完整验收。
+
+使用 nvm 时可先执行 `nvm install && nvm use`（版本记录在 `.nvmrc`）。
 
 ```bash
 npm ci
@@ -59,6 +61,12 @@ doc/             架构图与课程要求的 README
 examples/        demo.svg / flowchart.svg / other.svg
 scripts/         PlantUML 渲染脚本
 ```
+
+## 验证与提交
+
+`npm run verify` 执行严格类型检查与全部自动化测试。验收记录、修复过程和规格对应表见 `doc/README.md`。
+
+远程仓库：https://github.com/1731067942cjh-hash/GaoJiRuanJian 。提交版本以 `final` 标签为准；本次修订保留旧提交历史，旧标签另存为 `archive/final-2026-10-19`。
 
 ## 阶段边界与已知限制
 
