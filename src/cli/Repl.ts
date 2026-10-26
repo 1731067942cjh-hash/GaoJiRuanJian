@@ -13,6 +13,8 @@ export class Repl {
   ): Promise<void> {
     const interactive = Boolean((input as NodeJS.ReadStream).isTTY);
     const readline = createInterface({ input, output, terminal: interactive });
+    let closed = false;
+    readline.once('close', () => { closed = true; });
 
     if (interactive) {
       output.write("svg-editor 0.1 — type 'help' for commands\n\n");
@@ -25,7 +27,7 @@ export class Repl {
       for (const entry of lines) {
         output.write(`${entry}\n`);
       }
-      if (interactive) {
+      if (interactive && !closed) {
         readline.prompt();
       }
     }
