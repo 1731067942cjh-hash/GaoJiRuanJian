@@ -86,6 +86,7 @@ describe('SvgWriter', () => {
   it('round-trips the fixture without warnings', () => {
     const first = reader().read(fixture);
     const svg = new SvgWriter().write(first.document);
+    expect(svg).not.toContain('id="svg"');
     expect(svg.startsWith('<?xml version="1.0" encoding="UTF-8"?>')).toBe(true);
     expect(svg).toContain('<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"');
 

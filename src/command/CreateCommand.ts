@@ -11,7 +11,7 @@ export class CreateCommand implements EditCommand {
   ) {}
 
   execute(document: Document): string {
-    if (document.find(this.shape.id) !== undefined) {
+    if (document.hasId(this.shape.id)) {
       throw new DomainError(`id already exists: ${this.shape.id}`);
     }
     this.parent.appendChild(this.shape);

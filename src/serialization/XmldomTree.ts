@@ -7,10 +7,10 @@ export class XmldomTree implements XmlTreeParser {
   parse(source: string): XmlElement {
     const errors: string[] = [];
     const parser = new DOMParser({
-      onError: (level, message) => {
-        if (level !== 'warning') {
-          errors.push(message);
-        }
+      onError: (_level, message) => {
+        // Warnings also describe syntax repairs (e.g. unquoted attributes).
+        // Reject those inputs rather than replacing the user's document.
+        errors.push(message);
       },
     });
 

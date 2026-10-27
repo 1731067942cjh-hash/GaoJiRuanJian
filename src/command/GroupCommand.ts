@@ -23,7 +23,7 @@ export class GroupCommand implements EditCommand {
   ) {}
 
   execute(document: Document): string {
-    if (document.find(this.newId) !== undefined) {
+    if (document.hasId(this.newId)) {
       throw new DomainError(`id already exists: ${this.newId}`);
     }
     if (this.targets.length < 2) {

@@ -27,9 +27,11 @@ export class SvgWriter implements ShapeVisitor<void> {
   visitDocument(document: Document): void {
     const width = NumberFormat.format(document.width);
     const height = NumberFormat.format(document.height);
+    const viewBox = document.viewBox.map(value => NumberFormat.format(value)).join(' ');
+    const metadata = this.attributes(document, [], document.svgId ?? null);
     this.lines.push('<?xml version="1.0" encoding="UTF-8"?>');
     this.lines.push(
-      `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`,
+      `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="${viewBox}"${metadata.length === 0 ? '' : ` ${metadata}`}>`,
     );
     this.depth = 1;
     for (const child of document.children) {
@@ -106,8 +108,9 @@ export class SvgWriter implements ShapeVisitor<void> {
     );
   }
 
-  private attributes(shape: Shape, geometry: ReadonlyArray<readonly [string, string]>): string {
-    const pairs: Array<readonly [string, string]> = [['id', shape.id], ...geometry];
+  private attributes(shape: Shape, geometry: ReadonlyArray<readonly [string, string]>, id: string | null = shape.id): string {
+    const pairs: Array<readonly [string, string]> = [...geometry];
+    if (id !== null) pairs.unshift(['id', id]);
     if (shape.fill !== undefined) pairs.push(['fill', shape.fill]);
     if (shape.stroke !== undefined) pairs.push(['stroke', shape.stroke]);
     if (shape.strokeWidth !== undefined) pairs.push(['stroke-width', shape.strokeWidth]);
@@ -126,10 +129,13 @@ export class SvgWriter implements ShapeVisitor<void> {
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
+      .replace(/"/g, '&quot;')
+      .replace(/\t/g, '&#9;')
+      .replace(/\n/g, '&#10;')
+      .replace(/\r/g, '&#13;');
   }
 
   private escapeText(value: string): string {
-    return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\r/g, '&#13;');
   }
 }

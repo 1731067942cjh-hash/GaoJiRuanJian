@@ -4,6 +4,7 @@ import { Container } from '../domain/Container';
 import { IdAllocator } from '../domain/IdAllocator';
 import { IDENTITY, Transform, type Matrix } from '../domain/Transform';
 import type { Shape } from '../domain/Shape';
+import { NumberFormat } from '../domain/NumberFormat';
 import type { ShapeFactory } from '../shape/ShapeFactory';
 import type { XmlElement, XmlTreeParser } from './XmlTree';
 
@@ -37,7 +38,8 @@ export class SvgReader {
     this.collectIds(root, explicitIds);
     const allocator = new IdAllocator(explicitIds);
     const size = this.readCanvasSize(root);
-    const document = new Document(size.width, size.height);
+    const document = new Document(size.width, size.height, size.viewBox);
+    document.loadRootAttributes(root.attributes);
     const warnings: string[] = [];
 
     for (const child of root.children) {
@@ -52,9 +54,6 @@ export class SvgReader {
 
   private collectIds(element: XmlElement, ids: Set<string>): void {
     for (const child of element.children) {
-      if (!this.factory.has(child.tagName)) {
-        continue;
-      }
       const id = child.attributes.get('id');
       if (id !== undefined) {
         if (ids.has(id)) {
@@ -110,6 +109,9 @@ export class SvgReader {
       }
     } else {
       shape.transformBy(matrix);
+      if (Object.values(shape.readGeometry()).some(value => !Number.isFinite(value))) {
+        throw new DomainError('geometry must remain finite');
+      }
       if (element.children.length > 0) {
         warnings.push(`nested elements in <${tag}> are not supported`);
       }
@@ -118,29 +120,31 @@ export class SvgReader {
     return shape;
   }
 
-  private readCanvasSize(root: XmlElement): { width: number; height: number } {
+  private readCanvasSize(root: XmlElement): {
+    width: number; height: number; viewBox?: readonly [number, number, number, number];
+  } {
     const viewBox = this.parseViewBox(root.attributes.get('viewBox'));
-    const width = this.parseLength(root.attributes.get('width')) ?? viewBox?.width ?? 800;
-    const height = this.parseLength(root.attributes.get('height')) ?? viewBox?.height ?? 600;
-    return { width, height };
+    const width = this.parseLength(root.attributes.get('width'), 'width') ?? viewBox?.[2] ?? 800;
+    const height = this.parseLength(root.attributes.get('height'), 'height') ?? viewBox?.[3] ?? 600;
+    return { width, height, viewBox };
   }
 
-  private parseViewBox(value: string | undefined): { width: number; height: number } | null {
-    if (value === undefined) return null;
-    const parts = value.split(/[\s,]+/).filter((part) => part.length > 0);
-    if (parts.length !== 4) return null;
-    const width = Number(parts[2]);
-    const height = Number(parts[3]);
-    if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
-      return null;
+  private parseViewBox(value: string | undefined): readonly [number, number, number, number] | undefined {
+    if (value === undefined) return undefined;
+    const parts = value.trim().split(/[\s,]+/);
+    const numbers = parts.map(part => NumberFormat.parse(part, 'viewBox'));
+    if (numbers.length !== 4 || numbers[2] <= 0 || numbers[3] <= 0) {
+      throw new DomainError(`invalid viewBox: ${value}`);
     }
-    return { width, height };
+    return [numbers[0], numbers[1], numbers[2], numbers[3]];
   }
 
-  private parseLength(value: string | undefined): number | null {
-    if (value === undefined) return null;
-    const parsed = Number.parseFloat(value);
-    if (!Number.isFinite(parsed) || parsed <= 0) return null;
+  private parseLength(value: string | undefined, name: string): number | undefined {
+    if (value === undefined) return undefined;
+    const match = /^\s*([+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?)(?:px)?\s*$/.exec(value);
+    if (match === null) throw new DomainError(`invalid ${name}: ${value}`);
+    const parsed = NumberFormat.parse(match[1], name);
+    if (parsed <= 0) throw new DomainError(`invalid ${name}: ${value}`);
     return parsed;
   }
 }

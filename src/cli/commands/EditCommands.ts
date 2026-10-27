@@ -29,7 +29,7 @@ export class EditCommands {
         if (!session.factory.has(type)) {
           throw new DomainError(`unknown shape type: ${type} (is the plugin loaded?)`);
         }
-        if (document.find(id) !== undefined) {
+        if (document.hasId(id)) {
           throw new DomainError(`id already exists: ${id}`);
         }
 
