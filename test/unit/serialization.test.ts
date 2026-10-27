@@ -115,6 +115,55 @@ describe('SvgWriter', () => {
 });
 
 describe('SvgReader edge cases', () => {
+  it('preserves the root viewport, inherited styles and metadata on round-trip', () => {
+    const source = '<svg xmlns="http://www.w3.org/2000/svg" id="drawing" width="400px" height="200" viewBox="10 20 100 50" fill="red" stroke="blue" preserveAspectRatio="xMinYMin meet"><rect id="r" width="10" height="20"/></svg>';
+    const first = reader().read(source);
+    const output = new SvgWriter().write(first.document);
+    expect(output).toContain('viewBox="10 20 100 50"');
+    expect(output).toContain('id="drawing"');
+    expect(output).toContain('fill="red"');
+    expect(output).toContain('stroke="blue"');
+    expect(output).toContain('preserveAspectRatio="xMinYMin meet"');
+    const second = reader().read(output);
+    expect(second.warnings).toEqual([]);
+    expect(new SvgWriter().write(second.document)).toBe(output);
+    second.document.resize(800, 600);
+    expect(new SvgWriter().write(second.document)).toContain('viewBox="0 0 800 600"');
+  });
+
+  it('reserves ids even on skipped elements when assigning missing ids', () => {
+    const result = reader().read('<svg><rect/><path id="rect1"/></svg>');
+    expect(result.document.find('rect2')?.tag).toBe('rect');
+    expect(result.warnings).toContain('assigned id rect2 to unnamed <rect>');
+  });
+
+  it.each([
+    '<svg><g id=unquoted/></svg>',
+    '<svg><rect id="r" width="1"/></svg>garbage',
+  ])('rejects XML that would otherwise be silently repaired: %s', source => {
+    expect(() => reader().read(source)).toThrow();
+  });
+
+  it.each(['-1', '0', '100oops', '50%', 'NaN'])('rejects an invalid explicit canvas width: %s', width => {
+    expect(() => reader().read(`<svg width="${width}"/>`)).toThrow();
+  });
+
+  it.each(['1 2 0 10', 'oops 2 10 10', '0 0 10', '0 0 1e309 20'])('rejects an invalid viewBox: %s', viewBox => {
+    expect(() => reader().read(`<svg viewBox="${viewBox}"/>`)).toThrow();
+  });
+
+  it('rejects geometry overflow caused by an imported transform', () => {
+    expect(() => reader().read('<svg><rect id="r" x="1e308" width="1" height="1" transform="scale(2)"/></svg>')).toThrow('geometry must remain finite');
+  });
+
+  it('preserves XML attribute whitespace and text carriage returns', () => {
+    const source = '<svg><text id="t" data-note="a&#9;b&#10;c&#13;d">A&#13;B</text></svg>';
+    const first = reader().read(source);
+    const second = reader().read(new SvgWriter().write(first.document));
+    expect(second.document.find('t')?.getExtra('data-note')).toBe('a\tb\nc\rd');
+    expect(second.document.find('t')?.getAttribute('text')).toBe('A\rB');
+  });
+
   it('falls back to viewBox or defaults', () => {
     const fromViewBox = reader().read(
       '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100"><g id="g1"/></svg>',

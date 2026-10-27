@@ -26,6 +26,35 @@ function editor() {
 }
 
 describe('specification regressions', () => {
+  it('prevents new ids from colliding with an imported root id', async () => {
+    const e = editor();
+    e.files.set('root.svg', '<svg id="drawing"><g id="a"/><g id="b"/></svg>');
+    await e.run('read root.svg');
+    expect(await e.run('create g drawing')).toEqual(['error: id already exists: drawing']);
+    expect(await e.run('group drawing a b')).toEqual(['error: id already exists: drawing']);
+  });
+
+  it.each([
+    '<svg width="bad"/>',
+    '<svg><rect id="r" x="1e308" transform="scale(2)"/></svg>',
+    '<svg><g id=unquoted/></svg>',
+  ])('keeps the document, path and redo when an external SVG is invalid: %s', async source => {
+    const e = editor();
+    await e.run('init');
+    await e.run('create g a');
+    await e.run('create g b');
+    await e.run('undo');
+    await e.run('save previous.svg');
+    await e.run('create g c');
+    await e.run('undo');
+    const before = await e.run('tree');
+    e.files.set('bad.svg', source);
+    expect((await e.run('read bad.svg'))[0]).toMatch(/^error:/);
+    expect(await e.run('tree')).toEqual(before);
+    expect(await e.run('redo')).toEqual(['g#c created']);
+    expect(await e.run('save')).toEqual(['saved to previous.svg (2 elements)']);
+  });
+
   it('preserves sibling order when group arguments are reversed, including redo', async () => {
     const e = editor();
     await e.run('init');
