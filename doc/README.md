@@ -1,6 +1,75 @@
 # Lab1 Phase 1 — SVG 编辑器（CLI）
 
-本文件是课程要求的工程文档：架构方案、过程记录、一致性自查与质量保证手段。实现与命令用法见仓库根目录的 `README.md`，原始需求见 `phase_cli_1.md`（未纳入版本库）。
+本文件是 Lab1 Phase 1 的完整作业报告，包含架构方案、过程记录、一致性自查与质量保证手段。项目采用 TypeScript 面向对象实现，并使用 Codex 协作开发。
+
+## 提交信息
+
+| 项目 | 内容 |
+|---|---|
+| **Git 仓库地址** | **[https://github.com/1731067942cjh-hash/GaoJiRuanJian](https://github.com/1731067942cjh-hash/GaoJiRuanJian)** |
+| 最终代码 | [final 标签对应的代码与文档](https://github.com/1731067942cjh-hash/GaoJiRuanJian/tree/final) |
+| 作业文档 | 工程内的 `doc/README.md`；根目录 `README.md` 是完整提交版，包含本报告全部内容 |
+| 截止日期 | **2026 年 10 月 27 日（北京时间，UTC+8）**；按当日结束 **23:59:59** 执行 |
+| 最近复查 | 2026 年 10 月 27 日；本次在原有实现上增强 SVG 读写、保存可靠性与文档完整性 |
+| 版本依据 | 保留真实分步提交；最终版本由 `final` 标签标识，旧版本分别保存在归档标签中 |
+
+单独提交时，只需提交生成的 **README.md**。其中已包含仓库地址、全部报告章节、架构图链接及 PlantUML 源码，无需再附其他 Markdown 文件。源代码、测试、示例和架构图文件可从仓库取得。
+
+## 安装、运行与操作示例
+
+运行环境：Node.js **22.12+（22.x）、24.x 或 26+**，实测版本 **v26.8.2 / npm 11.19.1**；`.nvmrc` 记录了推荐版本。这与锁定的 Vitest 5 的环境要求一致。
+
+```bash
+git clone https://github.com/1731067942cjh-hash/GaoJiRuanJian.git
+cd GaoJiRuanJian
+git checkout final
+npm ci
+npm run verify
+npm run cli
+```
+
+已在本地打开工程时，在工程目录直接执行 `npm run cli` 即可；使用 nvm 可先执行 `nvm install && nvm use`。
+
+```text
+svg> init 800 600
+canvas 800x600 created
+svg> create g scene
+g#scene created
+svg> create rect node 20 30 160 60 #4a90d9 in scene
+rect#node created in g#scene
+svg> create text label 40 65 "开始" in scene
+text#label created in g#scene
+svg> move scene 50 0
+g#scene moved by (50,0)
+svg> undo
+g#scene moved back by (-50,0)
+svg> save drawing.svg
+saved to drawing.svg (3 elements)
+```
+
+保存的 SVG 可直接在浏览器打开。`help` 显示完整语法；`tree` 内联关键几何属性，`show <id>` 显示属性明细。`#` 开头的整行是注释；带空格的文本和路径使用双引号。Ctrl+D 结束输入；非 TTY 模式输出纯结果，便于回放脚本。
+
+| 命令 | 用途 |
+|---|---|
+| `init [w] [h]`、`read <file.svg>`、`save [file.svg]`、`canvas [w] [h]` | 文档生命周期、文件读写及画布尺寸 |
+| `create <type> <id> ... [in <gid>]` | 创建 rect / circle / ellipse / line / text / g 六种内置图形 |
+| `delete`、`move`、`scale`、`set` | 对叶子和容器使用统一操作接口 |
+| `group`、`ungroup`、`addto`、`front`、`back` | 分组、归属与同级绘制顺序 |
+| `tree [id]`、`show <id>`、`help` | 结构、属性和命令说明 |
+| `undo`、`redo` | 每条成功编辑命令一个历史单元；IO 成功后按规格锁定历史 |
+
+`set` 只接受公共样式 `fill/stroke/stroke-width`、当前图形自身几何属性及 text 的 `text` 内容属性。`box` 是后续插件阶段目标，本阶段按规格返回未知类型错误。
+
+| 工程命令 | 用途 |
+|---|---|
+| `npm run cli` | 启动 CLI |
+| `npm run typecheck` | 严格 TypeScript 检查 |
+| `npm test` | 全部单元与真实 CLI 集成测试 |
+| `npm run verify` | 类型检查、测试及 README 同步检查 |
+| `npm run diagram` | 用本机 PlantUML 重新生成架构 SVG |
+| `npm run submission` | 从 `doc/README.md` 更新完整、可单独提交的根目录 README |
+| `npm run submission -- --output <目录>` | 另外导出一份名为 README.md 的提交文件 |
+
 
 ---
 
@@ -13,7 +82,7 @@ src/
 ├── domain/          纯领域模型：零 IO、零 CLI 依赖
 │   ├── Shape.ts            抽象基类（id、父指针、accept、move/scale 契约、公共样式）
 │   ├── Container.ts        Composite 基类：children、插入/摘除、递归操作、查找
-│   ├── Document.ts         根 <svg>：画布尺寸、递归查找、元素计数
+│   ├── Document.ts         根 <svg>：尺寸/viewBox/根属性、递归查找、全局 id 检查
 │   ├── Rect.ts / Circle.ts / Ellipse.ts / Line.ts / TextShape.ts / Group.ts
 │   ├── ShapeVisitor.ts     访问者接口（tree / show / SVG 写出共用）
 │   ├── Transform.ts        仿射矩阵解析与乘法（read 时烘焙坐标）
@@ -40,7 +109,7 @@ src/
 │   └── HelpText.ts         help 文案
 ├── io/
 │   ├── FileGateway.ts      文件读写端口
-│   └── NodeFileGateway.ts  node:fs/promises 适配器
+│   └── NodeFileGateway.ts  文件适配器：临时文件写入、同步与原子替换
 └── cli/
     ├── Tokenizer.ts        引号、转义、行首 # 注释
     ├── CommandParser.ts    命令名 + 参数
@@ -60,12 +129,54 @@ src/
 | `command` | 把每个编辑操作封装为对象；维护 undo/redo；失败不落地 | 直接打印、直接读写文件 |
 | `serialization` | SVG ↔ 模型；XML 适配；转义与格式 | 依赖 CLI、直接读写磁盘 |
 | `view` | tree/show/help 文本呈现 | 修改模型、读写文件 |
-| `io` | 路径 → 文本、文本 → 文件；错误归一化 | 理解图形语义 |
+| `io` | 读取文本；先完整写入/同步临时文件，再原子替换目标；异常交给 Session 统一报错 | 理解图形语义 |
 | `cli` | 分词、解析、分派、REPL、错误文案、组合根 | 持有领域规则（规则在 domain/command） |
 
 ![模块依赖图](architecture.svg)
 
-> 图源：`architecture.puml`，可用 `npm run diagram` 或 `plantuml -tsvg doc/architecture.puml` 重新生成。
+> 图源：`doc/architecture.puml`，可用 `npm run diagram` 重新生成。以下同时附源码，单独提交 Markdown 时仍可查看模块与依赖定义。
+
+```plantuml
+@startuml
+title Lab1 Phase 1 · SVG Editor CLI · 模块依赖图
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam defaultFontSize 12
+skinparam nodesep 45
+skinparam ranksep 55
+left to right direction
+
+component "cli\nRepl · Tokenizer / CommandParser\nCommandRegistry · CommandDispatcher · EditorSession" as cli
+component "command\nEditCommand · History\n9 个命令类（覆盖 10 个编辑命令）" as cmd
+component "view\nTreeRenderer · ShowRenderer · HelpText" as view
+component "serialization\nSvgReader · SvgWriter · XmlTree 端口\n视口/根样式保留 · 严格导入校验" as ser
+component "io\nFileGateway · NodeFileGateway\n临时文件写入/同步 → 原子替换" as io
+component "shape\nShapeFactory（类型注册表）" as shape
+component "domain\nShape · Container · Document\n六种图形 · Transform · IdAllocator\nDocument：尺寸/视口/根属性" as domain
+
+cli --> cmd
+cli --> view
+cli --> shape
+cli --> domain
+cli --> ser
+cli --> io
+cmd --> domain
+shape --> domain
+ser --> shape
+ser --> domain
+view --> domain
+
+note bottom of cli
+  名字分派 #1：命令名 → 实现
+  @todo 插件化阶段改为命令注册
+end note
+
+note bottom of shape
+  名字分派 #2：类型名 → 类
+  @todo 插件化阶段改为 ShapeProvider
+end note
+@enduml
+```
 
 ### 1.2 设计模式的选择与落地
 
@@ -98,7 +209,7 @@ src/
 | `command` | `domain`, `shape` | 命令操作模型；不打印、不读写文件，结果以字符串返回 |
 | `view` | `domain` | 访问者只读模型 |
 | `serialization` | `domain`, `shape`；外部 XML 库只允许出现在 `XmldomTree` 适配器 | 读写逻辑与第三方库隔离 |
-| `io` | `io` + `node:fs` | 文件端口不依赖模型 |
+| `io` | `io` + `node:fs`、`node:path`、`node:crypto` | 文件端口不依赖模型；同目录临时文件需要路径操作与随机唯一文件名 |
 | `cli` | 以上全部 + `node:readline` | 组合根与适配层 |
 
 **硬规则：** 不允许反向依赖；不允许模块层级循环（同层接口的 type-only 引用允许）；`domain` 不得 import 任何 UI/IO/序列化代码。
@@ -130,6 +241,9 @@ src/
 | undo/redo 锁文案 | 按规格字面，两个方向都输出 `error: undo not allowed after io command`。 |
 | 数字 | `NumberFormat` 使用可往返的最短字符串；保留存储精度（如 `1e-10` 和 `1e30`），`-0` 输出为 `0`；可能显示正常的浮点运算尾差，不通过舍入改变数据。空数字与非有限值拒绝，move/scale 溢出整体回滚。 |
 | 未知 SVG 元素 | 警告并跳过（如 `<path>`）；未建模属性保存在 `extras` 并写回。 |
+| SVG 根信息 | 保留原始 `viewBox`、根元素 id、公共样式和未建模元数据；根 id 不对 CLI 寻址开放，但参与 id 唯一性检查。`canvas w h` 将视口重置为 `0 0 w h`。 |
+| 严格导入 | XML 语法被解析器自动修补也视为失败；显式非法画布尺寸/viewBox 与变换溢出被拒绝，文档、路径和历史保持完整。尺寸接受无单位数字或 px；缺省时才使用 viewBox/800×600。 |
+| 可靠保存 | 在同目录写入临时文件并同步、关闭，最后原子替换；替换失败时原文件完整，临时文件清理。保留已有普通文件权限；路径为符号链接时更新其目标。文件权限受操作系统规则约束。 |
 | `read` 重复 id | 视为非法输入：`error: duplicate id: <id>`，当前文档不变。 |
 | `save` 无路径 | 优先用最后一次 `read` 的路径；若从未 read，则回退到最后一次保存路径；两者都没有时：`error: no file path. use 'save <file.svg>'`（规格外扩展）。 |
 | `group` 插入位置 | 先按编辑前的文档遍历顺序排序，保持各目标原有相对顺序；新容器放在排序后第一个目标的位置，并使用其父级。跨父节点的全局顺序采用文档前序遍历。 |
@@ -142,7 +256,7 @@ src/
 
 ## 过程记录
 
-第 1–10 项保留已有工程的 2026-10-19 开发记录；第 11–15 项是 2026-10-26 本轮实际复查、失败复现与修正记录。早期测试数量表示当时结果，最终验收结果见后文。
+第 1–10 项保留已有工程的 2026-10-19 开发记录；第 11–15 项记录 2026-10-26 的规格复查；第 16–17 项记录 2026-10-27 的功能增强与提交文档修正。早期测试数量表示当时结果，最终验收结果见后文。
 
 ### 1. 规格的 `tree` 列宽自相矛盾
 
@@ -233,13 +347,29 @@ src/
 - **发现**：README 宣称 Node >=20，但已锁定的 Vitest 5.0.5 要求 `^22.12.0 || ^24.0.0 || >=26.0.0`。
 - **处理**：同步 package.json / package-lock.json engines 和 README，新增 `.nvmrc` 记录实测 26.8.2。CLI 使用 tsx，工程采用 `tsc --noEmit`，没有额外 build 脚本。
 - **版本管理**：保留原有逐步开发历史，本轮按回归测试、行为修复、面向对象重构、验收文档分步提交；旧 final 保存在 `archive/final-2026-10-19`，最终 `final` 指向本轮验收提交。
-- **截止时间**：任务文档没有提供具体截止日期，不能从已有文件推断，标签时间使用真实提交时间，不回填日期。
+- **截止时间（当时）**：2026-10-26 的附件未提供具体截止日期；2026-10-27 用户明确指定当天截止，最终标签使用真实时间更新，按当日结束前完成交付。
 
 ### 15. 最后一次交互实测发现 Ctrl+D 退出崩溃
 
 - **现象**：通过 PTY 连续粘贴六行命令后立即发送 Ctrl+D，readline 已关闭，REPL 仍在异步命令返回后调用 prompt，抛出 `ERR_USE_AFTER_CLOSE`，进程退出码 1。
 - **处理**：监听 close 事件，只在输入接口仍打开时打印下一条提示符；继续处理已经排队的命令。
 - **验证**：增加模拟 TTY 与 Ctrl+D 的真实 Dispatcher/Session 测试，确认排队命令执行完毕、几何撤销正确、无异常；再次用 PTY 复查正常退出。
+
+### 16. 2026-10-27：外部 SVG 往返与失败恢复的补强
+
+- **基线**：上一版 104 项测试全部通过，GitHub 远程 main 与 final 一致。
+- **发现**：根元素的 fill/stroke、id、viewBox 未保存，外部 SVG 经读写后可能改变外观；未加引号的 XML 属性被解析器警告并修补，但原实现忽略警告；非法尺寸和导入变换溢出可能直接替换当前文档。
+- **验证**：新增 SVG/会话回归用例，首次运行复现 18 项失败；另一项非法 XML 用例原本已能正确拒绝。先提交复现测试，再修复实现。
+- **处理**：Document 封装视口与根属性并统一检查 id；Reader 只对缺省尺寸使用默认值，严格拒绝非法显式输入；XML 适配器将自动修补警告视为失败；Writer 保留属性空白与文本回车。
+- **保存增强**：NodeFileGateway 从直接覆盖文件改为“写同目录临时文件 → 同步 → 关闭 → 原子替换”。使用真实临时目录与替换失败注入，验证原文件不被截断、不遗留临时文件、文件权限和符号链接语义正确；再通过真实 Session/Dispatcher 验证失败不会改变默认保存路径或锁定历史。
+- **架构判断**：变化仍留在 domain、serialization、io 原有边界内；命令工厂、Command/Composite/Visitor 契约保持一致，没有新增图形类型的名字分派。
+
+### 17. 2026-10-27：从运行说明改成可直接提交的完整 README
+
+- **发现**：根目录 README 只有运行说明，无法单独满足附件四大章节；doc/README 虽有完整报告，但未醒目给出仓库地址，单独复制时相对架构图路径失效。
+- **处理**：在报告开头明确仓库地址、final 版本、截止日期和运行方法；保留完整架构、真实过程、一致性自查、质量保证及修订记录，增加逐项验收表；附 PlantUML 源码。
+- **避免不同步**：`doc/README.md` 为唯一编辑源，`npm run submission` 生成完整根 README；提交版架构图改为仓库绝对地址，完整图源仍内联保留。`npm run docs:check` 检查生成内容与源报告一致，并纳入 verify。
+- **交付**：只需上传导出的 README.md；项目内仍按附件规定保留 doc/README.md。原先两个版本的 final 分别保留在 archive/final-2026-10-19 与 archive/final-2026-10-26。
 
 ---
 
@@ -273,7 +403,7 @@ src/
 
 本轮还将 `cli/commands/helpers.ts` 移除：模型查找归入 EditorSession，语法数量检查归入 CommandArguments；Repl、三个命令注册模块和 NumberFormat 均改为同名类。
 
-另外，计划中的 `test/`、`doc/`、`examples/`、`scripts/` 均按计划落地；`doc/README.md` 即本文件。
+另外，计划中的 `test/`、`doc/`、`examples/`、`scripts/` 均按计划落地；本轮新增 `scripts/sync-readme.mjs` 作为交付文档的生成与一致性检查工具；`doc/README.md` 即本文件。
 
 ### 2. 依赖方向：方案里的规则有没有被违反？
 
@@ -285,7 +415,7 @@ src/
 | `command` 不依赖 `cli/view/io/serialization` | 通过 |
 | `view` 不依赖 `command/io` | 通过 |
 | `serialization` 只依赖 `domain/shape` 与自身适配器 | 通过 |
-| `io` 只依赖 `node:fs` 与自身 | 通过 |
+| `io` 只依赖 Node 文件/路径/随机数模块与自身 | 通过 |
 | `cli` 依赖全部（组合根） | 通过 |
 | 无 `switch(tag)`；名字分派只在 Registry 与 Factory | 通过（代码审阅 + 工厂/注册表文件头 TODO） |
 
@@ -293,7 +423,7 @@ src/
 
 - `src/domain/Shape.ts` 的 import：`./Container`（type）、`./ShapeVisitor`（type）、`./Transform`（type）、`./errors/DomainError`、`./NumberFormat`。
 - `src/command/MoveCommand.ts` 只 import `../domain/*` 与 `./GeometrySnapshot` / `./EditCommand`，没有 CLI/IO。
-- `src/io/NodeFileGateway.ts` 只 import `node:fs/promises` 与 `./FileGateway`。
+- `src/io/NodeFileGateway.ts` import `node:fs/promises`、`node:path`、`node:crypto` 与 `./FileGateway`，未依赖任何模型、命令或 CLI。
 - `src/cli/main.ts` 是唯一组装全部适配器的地方。
 
 ---
@@ -303,13 +433,13 @@ src/
 ### 1. 自动化检查
 
 - **严格类型**：`npm run typecheck`（`strict`、`noUnusedLocals`、`noUnusedParameters`、`noImplicitOverride`）。
-- **测试**：`npm test`，9 个测试文件、**104 个用例**，覆盖领域、命令、序列化、视图、解析、依赖规则与真实 CLI 集成。
-- **本轮环境复验**：Node v26.8.2 / npm 11.19.1，重新执行 `npm ci --no-audit --no-fund` 成功后完成以下检查；`npm run diagram` 重新生成架构 SVG，并渲染 PNG 检查布局可读。
-- **一键验证**：`npm run verify`（typecheck + test）；最终运行结果：
+- **测试**：`npm test`，10 个测试文件、**129 个用例**，覆盖领域、命令、序列化、视图、解析、依赖规则与真实 CLI 集成。
+- **环境复验**：Node v26.8.2 / npm 11.19.1；2026-10-26 已重新安装锁定依赖，2026-10-27 在同一锁文件下复查。架构 SVG 随本轮职责说明更新，并渲染 PNG 检查布局。
+- **一键验证**：`npm run verify`（typecheck + test + docs:check）；最终运行结果：
 
 ```text
-Test Files  9 passed (9)
-Tests       104 passed (104)
+Test Files  10 passed (10)
+Tests       129 passed (129)
 ```
 
 - **架构测试**：`test/unit/dependency.test.ts` 同时检查依赖方向、“一类一文件、文件名=类名”、生产行为归属类、公开可变字段和 XML 库隔离。
@@ -319,13 +449,32 @@ Tests       104 passed (104)
 | 手段 | 内容 |
 |---|---|
 | golden transcript | §6 完整会话、§6.1 流程图会话、错误矩阵、undo/redo 历史，逐行比对真实子进程输出 |
-| 本轮回归 | 分组原顺序、跨父归属还原、空 id/空数字、文本空白、数值精度、溢出回滚、失败不清 redo、单行错误、init 可选宽度 |
+| 可靠保存 | 真实文件写入/读取、覆盖保留权限、符号链接目标更新、模拟替换失败、清理临时文件、Session 默认路径/历史保持 |
+| 导入增强 | 根样式/viewBox 往返、根 id 防冲突、未知元素 id 预留、非法 XML/尺寸/视口/溢出拒绝、属性空白与文本回车保留 |
+| 2026-10-26 回归 | 分组原顺序、跨父归属还原、空 id/空数字、文本空白、数值精度、溢出回滚、失败不清 redo、单行错误、init 可选宽度 |
 | round-trip | `read other.svg → save → read`，结构一致、无二次警告、XML 可再解析 |
 | 错误矩阵 | id 已存在/不存在、容器缺失/非容器、未知类型/属性、scale 非正、根级 ungroup、group 成环、addto 成环、文件读/写失败、无文档、io 后 undo |
 | 交互验证 | 用 `script` 分配 PTY，确认 banner、`svg>`、命令回显和结果；管道模式确认输出纯净 |
 | 图形验证 | 用 Quick Look 渲染 `examples/demo.svg`、`flowchart.svg`、`other.svg`，确认 SVG 可显示、文本/颜色/线条正确 |
 
-### 3. 规格逐项对照（摘要）
+### 3. 规格逐项对照
+
+| 附件要求 | 实现与核验依据 |
+|---|---|
+| §1.1 git 分步提交、远程推送与最终 final | 历史分别记录模型、命令、SVG、CLI、回归、修复、文档；远程仓库在报告开头给出，交付时核对 final/HEAD/远程 main 一致 |
+| §1.2 架构方案四项 | 模块职责表与 PlantUML 图、设计模式落点、依赖规则及理由、十项变化假设 |
+| §1.2 过程记录 | 保留初期和两轮复查的真实现象、判断、失败复现、修正与验证，不把测试通过等同于规格完整 |
+| §1.2 一致性自查 | 明确回答实际目录是否一致、依赖是否违反；列出修订、依赖抽样证据并以自动检查守护 |
+| §1.2 质量保证 | 类型检查、129 项测试、真实 CLI 会话回放、SVG 往返、保存失败恢复与文档同步检查 |
+| §2 REPL、id、浮点、引号、注释、错误与成功输出 | Tokenizer/Repl/Dispatcher；缺 id 提前预留后按标签补号并警告；错误转成单行；失败不改变模型与历史 |
+| §2.1 TypeScript + OOP | Shape 类层次与多态、私有字段、同名类文件；AST 与依赖检查；名字分派仅命令 Registry 与图形 Factory，均标注后续重构 |
+| §3–4 所有本阶段命令 | 19 个命令名全部实现；六种内置图形与 in、属性白名单、容器统一操作、顺序保持及原子 undo/redo |
+| §4.2 错误规范 | golden 错误矩阵及回归测试；box 的 composite 解组错误留给插件阶段，本阶段 create box 按附件返回未知类型 |
+| §4.3 历史粒度 | 每条编辑命令一个单元；新编辑清 redo；显示命令不入栈；成功 IO 后锁定历史；失败 IO 保留历史 |
+| §5–6 显示和典型会话 | §6 与 §6.1 使用真实 CLI 子进程逐行比对；tree 内联几何、show 显示 parent/属性；示例不一致的列宽采用已记录的确定规则 |
+| 补充作业要求：仅提交一份含 git 地址的 README.md | 完整生成版在根目录，包含本报告全部章节与仓库地址，可直接单独提交；doc/README.md 仍按附件保留 |
+
+具体覆盖：
 
 - 命令总表：文档类 4、编辑类 10（`front`/`back` 共用一个命令类）、显示类 3、`undo`/`redo` 全部实现。
 - `create` 六种类型、可选 fill/stroke、`in` 子句；`box` 报未知类型。
@@ -348,7 +497,7 @@ Tests       104 passed (104)
 - 领域操作与命令都有直接单测；结构命令的撤销/重做覆盖了跨父移动、部分兄弟、容器删除、根级拒绝等边界。
 - 真实 CLI 子进程回放规格会话，而不是只测孤立函数；golden 输出能发现提示符、警告顺序、计数、空行等集成问题。
 - 依赖方向与文件组织由测试守护，架构不会在后续修改中悄悄退化。
-- 所有偏离规格的地方都在本文件与修订记录中显式说明，没有“测试通过但语义不明”的项。
+- 已知排版差异、阶段边界和 SVG 子集限制均在本文件中显式说明；不宣称支持完整 SVG 规范。
 
 ---
 
@@ -356,6 +505,9 @@ Tests       104 passed (104)
 
 | 日期 | 修订 | 原因 |
 |---|---|---|
+| 2026-10-27 | 保留 SVG 根样式、id、viewBox 与属性空白；严格校验导入并阻止溢出 | 补齐外部 SVG 读写和失败恢复边界 |
+| 2026-10-27 | 文件保存改为同步临时文件后原子替换，保留权限与符号链接 | 保存失败时保护原文件；真实文件与会话联测 |
+| 2026-10-27 | 明确当日截止、仓库地址；完整 README 导出与同步检查 | 满足“提交一份含 git 地址的 README.md”并避免相对图路径失效 |
 | 2026-10-26 | 修复交互式粘贴命令后 Ctrl+D 崩溃 | PTY 实测暴露异步完成后对已关闭 readline 调用 prompt，加入退出回归 |
 | 2026-10-26 | 修复分组顺序、文本与数值往返、失败原子性、可选 init 宽度、合法 id 和错误换行 | 对照规格复现 11 项失败后修正 |
 | 2026-10-26 | Session/Composite 状态封装；快照、注册器、REPL 与工具行为归入类 | 严格落实面向对象要求，新增 AST 与容器不变量检查 |
@@ -380,9 +532,13 @@ npm ci
 npm run typecheck
 npm test
 npm run cli
-npm run diagram   # 需要本机 plantuml（brew install plantuml）
+npm run diagram   # 可选，需要本机 plantuml
+npm run submission
+npm run docs:check
 ```
 
 - 规格会话脚本：`test/fixtures/transcripts/*.in`，期望输出同名 `.out`。
 - 示例 SVG：`examples/demo.svg`、`examples/flowchart.svg`、`examples/other.svg`。
 - 架构图源：`doc/architecture.puml`；渲染产物：`doc/architecture.svg`。
+
+提交前可执行 `git rev-parse HEAD`、`git rev-parse "final^{}"` 与 `git ls-remote origin refs/heads/main "refs/tags/final^{}"` 核对版本一致；`git for-each-ref refs/tags/final --format="%(taggerdate:iso8601-strict)"` 查看真实标签时间。截止日期已明确为 2026-10-27，标签与远程推送应在北京时间当日结束前完成。

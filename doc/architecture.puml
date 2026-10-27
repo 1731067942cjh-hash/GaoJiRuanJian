@@ -10,10 +10,10 @@ left to right direction
 component "cli\nRepl · Tokenizer / CommandParser\nCommandRegistry · CommandDispatcher · EditorSession" as cli
 component "command\nEditCommand · History\n9 个命令类（覆盖 10 个编辑命令）" as cmd
 component "view\nTreeRenderer · ShowRenderer · HelpText" as view
-component "serialization\nSvgReader · SvgWriter · XmlTree 端口" as ser
-component "io\nFileGateway · NodeFileGateway" as io
+component "serialization\nSvgReader · SvgWriter · XmlTree 端口\n视口/根样式保留 · 严格导入校验" as ser
+component "io\nFileGateway · NodeFileGateway\n临时文件写入/同步 → 原子替换" as io
 component "shape\nShapeFactory（类型注册表）" as shape
-component "domain\nShape · Container · Document\n六种图形 · Transform · IdAllocator" as domain
+component "domain\nShape · Container · Document\n六种图形 · Transform · IdAllocator\nDocument：尺寸/视口/根属性" as domain
 
 cli --> cmd
 cli --> view

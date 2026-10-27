@@ -12,8 +12,10 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "verify": "npm run typecheck && npm test",
-    "diagram": "node scripts/render-diagram.mjs"
+    "verify": "npm run typecheck && npm test && npm run docs:check",
+    "diagram": "node scripts/render-diagram.mjs",
+    "submission": "node scripts/sync-readme.mjs",
+    "docs:check": "node scripts/sync-readme.mjs --check"
   },
   "dependencies": {
     "@xmldom/xmldom": "^0.9.12"
