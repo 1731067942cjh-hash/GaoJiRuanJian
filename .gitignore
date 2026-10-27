@@ -7,3 +7,7 @@ coverage/
 
 # Assignment statement is kept next to the repository but is not part of the deliverable.
 phase_cli_1.md
+
+# CLI-generated drawings and interrupted atomic-save files.
+/*.svg
+*.tmp

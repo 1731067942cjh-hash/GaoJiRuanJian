@@ -256,7 +256,7 @@ end note
 
 ## 过程记录
 
-第 1–10 项保留已有工程的 2026-10-19 开发记录；第 11–15 项记录 2026-10-26 的规格复查；第 16–17 项记录 2026-10-27 的功能增强与提交文档修正。早期测试数量表示当时结果，最终验收结果见后文。
+第 1–10 项保留已有工程的 2026-10-19 开发记录；第 11–15 项记录 2026-10-26 的规格复查；第 16–18 项记录 2026-10-27 的功能增强、提交文档修正及最终仓库清理。早期测试数量表示当时结果，最终验收结果见后文。
 
 ### 1. 规格的 `tree` 列宽自相矛盾
 
@@ -371,6 +371,14 @@ end note
 - **避免不同步**：`doc/README.md` 为唯一编辑源，`npm run submission` 生成完整根 README；提交版架构图改为仓库绝对地址，完整图源仍内联保留。`npm run docs:check` 检查生成内容与源报告一致，并纳入 verify。
 - **交付**：只需上传导出的 README.md；项目内仍按附件规定保留 doc/README.md。原先两个版本的 final 分别保留在 archive/final-2026-10-19 与 archive/final-2026-10-26。
 
+### 18. 2026-10-27：最终仓库清理
+
+- **检查方法**：列出 Git 实际跟踪文件，检查源码、测试、工程脚本与 Markdown 的引用；比较重复文件内容，区分运行/测试依赖和开发产物。
+- **删除文件**：历史计划 `PLAN.md`；生成示例 `examples/demo.svg`、`examples/flowchart.svg`；与 `test/fixtures/other.svg` 内容完全相同的 `examples/other.svg` 副本。共删除 4 个跟踪文件，原文件合计 35,108 字节。
+- **保留依据**：架构图源与 SVG 是作业报告依赖；测试夹具和 golden `.out` 是验收基准；根 README 是单独提交版，doc/README 是附件规定的源报告；工程脚本、锁文件与 Node 版本文件仍用于复现和维护。
+- **预防重复入库**：忽略根目录下 CLI 保存的 SVG 和中断保存后可能残留的 `.tmp` 文件。`node_modules`、系统缓存和附件原文原本就未入库，不计入 GitHub 删除清单。
+- **验证**：同步完整 README 后运行全部类型检查、129 项测试和文档一致性检查；本次未修改 `src/` 下的系统实现。
+
 ---
 
 ## 一致性自查
@@ -403,7 +411,7 @@ end note
 
 本轮还将 `cli/commands/helpers.ts` 移除：模型查找归入 EditorSession，语法数量检查归入 CommandArguments；Repl、三个命令注册模块和 NumberFormat 均改为同名类。
 
-另外，计划中的 `test/`、`doc/`、`examples/`、`scripts/` 均按计划落地；本轮新增 `scripts/sync-readme.mjs` 作为交付文档的生成与一致性检查工具；`doc/README.md` 即本文件。
+最终目录保留 `src/`、`test/`、`doc/`、`scripts/` 与必要工程配置。历史计划文件和 `examples/` 生成副本已在最终清理时删除，变化记入过程记录与修订表；可复现示例的命令仍保留在 `test/fixtures/transcripts/`。`scripts/sync-readme.mjs` 负责生成完整提交 README，`doc/README.md` 即本报告源文件。
 
 ### 2. 依赖方向：方案里的规则有没有被违反？
 
@@ -455,7 +463,7 @@ Tests       129 passed (129)
 | round-trip | `read other.svg → save → read`，结构一致、无二次警告、XML 可再解析 |
 | 错误矩阵 | id 已存在/不存在、容器缺失/非容器、未知类型/属性、scale 非正、根级 ungroup、group 成环、addto 成环、文件读/写失败、无文档、io 后 undo |
 | 交互验证 | 用 `script` 分配 PTY，确认 banner、`svg>`、命令回显和结果；管道模式确认输出纯净 |
-| 图形验证 | 用 Quick Look 渲染 `examples/demo.svg`、`flowchart.svg`、`other.svg`，确认 SVG 可显示、文本/颜色/线条正确 |
+| 图形验证（历史记录） | 清理前曾用 Quick Look 检查生成 SVG 的文字、颜色和线条；这些生成副本现已删除，仍可用保留的会话脚本复现，读入样例保留在 `test/fixtures/other.svg` |
 
 ### 3. 规格逐项对照
 
@@ -505,6 +513,7 @@ Tests       129 passed (129)
 
 | 日期 | 修订 | 原因 |
 |---|---|---|
+| 2026-10-27 | 清理历史计划、生成示例与重复 SVG；补充输出文件忽略规则 | 删除 4 个无运行/测试依赖的跟踪文件，文档引用同步修正 |
 | 2026-10-27 | 保留 SVG 根样式、id、viewBox 与属性空白；严格校验导入并阻止溢出 | 补齐外部 SVG 读写和失败恢复边界 |
 | 2026-10-27 | 文件保存改为同步临时文件后原子替换，保留权限与符号链接 | 保存失败时保护原文件；真实文件与会话联测 |
 | 2026-10-27 | 明确当日截止、仓库地址；完整 README 导出与同步检查 | 满足“提交一份含 git 地址的 README.md”并避免相对图路径失效 |
@@ -512,7 +521,7 @@ Tests       129 passed (129)
 | 2026-10-26 | 修复分组顺序、文本与数值往返、失败原子性、可选 init 宽度、合法 id 和错误换行 | 对照规格复现 11 项失败后修正 |
 | 2026-10-26 | Session/Composite 状态封装；快照、注册器、REPL 与工具行为归入类 | 严格落实面向对象要求，新增 AST 与容器不变量检查 |
 | 2026-10-26 | 同步 Node 版本要求，补充本轮真实过程与验收结果 | 使安装说明、代码、测试和架构方案一致 |
-| 2026-10-19 | 初版架构方案与模块划分 | 依据 `PLAN.md` 与规格确定分层 |
+| 2026-10-19 | 初版架构方案与模块划分 | 依据当时的开发计划与规格确定分层；该计划已在最终清理中移出当前版本，可从 Git 历史追溯 |
 | 2026-10-19 | XML 适配器由计划的 `fast-xml-parser` 改为 `@xmldom/xmldom`，新增 `XmlTree` 端口 | 保留顺序/属性/文本更直接；隔离第三方库 |
 | 2026-10-19 | 拆分 `XmlParseError.ts` | 满足“一类一文件、文件名=类名”的自检规则 |
 | 2026-10-19 | `tree` 只显示 fill，不显示 stroke | 对齐规格 §5.1 / §6.1 的示例 |
@@ -538,7 +547,8 @@ npm run docs:check
 ```
 
 - 规格会话脚本：`test/fixtures/transcripts/*.in`，期望输出同名 `.out`。
-- 示例 SVG：`examples/demo.svg`、`examples/flowchart.svg`、`examples/other.svg`。
+- 外部 SVG 测试样例：`test/fixtures/other.svg`；示例命令序列：`test/fixtures/transcripts/section6.in`、`section6_1.in`。
+- 如需生成示例，请在临时工作目录回放上述脚本；生成 SVG 不再作为源码副本提交。
 - 架构图源：`doc/architecture.puml`；渲染产物：`doc/architecture.svg`。
 
 提交前可执行 `git rev-parse HEAD`、`git rev-parse "final^{}"` 与 `git ls-remote origin refs/heads/main "refs/tags/final^{}"` 核对版本一致；`git for-each-ref refs/tags/final --format="%(taggerdate:iso8601-strict)"` 查看真实标签时间。截止日期已明确为 2026-10-27，标签与远程推送应在北京时间当日结束前完成。
